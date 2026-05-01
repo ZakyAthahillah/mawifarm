@@ -132,7 +132,7 @@ const sectionConfig: Record<SectionKey, SectionConfig> = {
         formatDateOnly(record.tanggal),
         String(record.nama_kandang ?? "-"),
         String(record.nama_periode ?? "-"),
-        `${totalBerat}`,
+        formatDecimal(totalBerat, 1),
         `Rp ${totalHarga.toLocaleString("id-ID")}`,
         "",
       ];
@@ -281,6 +281,14 @@ function dateInputValue(value: unknown) {
 function formatInteger(value: unknown) {
   const parsed = Number(value ?? 0);
   return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(Number.isFinite(parsed) ? parsed : 0);
+}
+
+function formatDecimal(value: unknown, digits = 1) {
+  const parsed = Number(value ?? 0);
+  return new Intl.NumberFormat("id-ID", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Number.isFinite(parsed) ? parsed : 0);
 }
 
 async function apiRequest(

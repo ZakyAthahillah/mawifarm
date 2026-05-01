@@ -128,8 +128,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <div className="flex h-full w-full flex-col">
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-5">
-                <div className="flex items-center gap-3 overflow-hidden">
+                <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
                   <MawiFarmLogo className="h-11 w-11" />
+                  {!collapsed && (
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold tracking-tight text-slate-950">Mawi Farm</p>
+                    </div>
+                  )}
                 </div>
               <button
                 type="button"
@@ -197,7 +202,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
-              <MawiFarmLogo className="h-11 w-11" />
+              <div className="flex min-w-0 items-center gap-3">
+                <MawiFarmLogo className="h-11 w-11" />
+                <p className="truncate text-base font-semibold tracking-tight text-slate-950">Mawi Farm</p>
+              </div>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
