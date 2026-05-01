@@ -4,8 +4,12 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "MawiFarm",
+  title: "Mawi Farm",
   description: "Dashboard web app MawiFarm untuk monitoring kandang, produksi, pakan, dan operasional.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/mawi-farm-logo.png",
+  },
 };
 
 export default function RootLayout({
