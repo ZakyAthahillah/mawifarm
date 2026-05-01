@@ -3,7 +3,7 @@
 import { ArrowRight, Eye, EyeOff, ShieldCheck, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getApiBase, readJsonResponse } from "@/components/api";
+import { getApiBase, getJsonHeaders, readJsonResponse } from "@/components/api";
 import { useAuth } from "@/components/providers";
 
 export function LoginForm() {
@@ -24,7 +24,7 @@ export function LoginForm() {
       const response = await fetch(`${getApiBase()}/login`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: getJsonHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ username, password }),
       });
 

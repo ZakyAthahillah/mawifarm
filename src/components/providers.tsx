@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { getApiBase, readJsonResponse } from "@/components/api";
+import { getApiBase, getJsonHeaders, readJsonResponse } from "@/components/api";
 
 type AuthUser = {
   name: string;
@@ -31,6 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
       try {
         const response = await fetch(`${getApiBase()}/me`, {
           credentials: "include",
+          headers: getJsonHeaders(),
         });
 
         if (response.ok) {

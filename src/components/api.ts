@@ -22,6 +22,13 @@ export function getApiBase() {
 
 export const ownerScopeStorageKey = "mawifarm_owner_scope";
 
+export function getJsonHeaders(headers: HeadersInit = {}): HeadersInit {
+  return {
+    Accept: "application/json",
+    ...headers,
+  };
+}
+
 export function getOwnerScopeHeaders(): HeadersInit {
   if (typeof window === "undefined") {
     return {};
@@ -39,7 +46,7 @@ export async function readJsonResponse<T = unknown>(response: Response): Promise
     const preview = text.trim().slice(0, 80);
     throw new Error(
       preview.startsWith("<!DOCTYPE") || preview.startsWith("<html")
-        ? "API mengirim halaman HTML, bukan JSON. Pastikan Laravel API berjalan dan URL API sudah benar."
+        ? `API mengirim halaman HTML, bukan JSON (${response.status} ${response.url}). Pastikan URL API mengarah ke Laravel.`
         : "API tidak mengirim JSON."
     );
   }

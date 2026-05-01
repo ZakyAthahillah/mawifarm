@@ -19,7 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
-import { getApiBase, ownerScopeStorageKey } from "@/components/api";
+import { getApiBase, getJsonHeaders, ownerScopeStorageKey } from "@/components/api";
 import { useAuth } from "@/components/providers";
 
 type NavItem = {
@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       await fetch(`${getApiBase()}/logout`, {
         method: "POST",
         credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" },
+        headers: getJsonHeaders(token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" }),
       });
     } finally {
       logout();

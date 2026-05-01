@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { getApiBase, readJsonResponse } from "@/components/api";
+import { getApiBase, getJsonHeaders, readJsonResponse } from "@/components/api";
 import { PageHeader, StatCard } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 import { BadgeCheck, PencilLine, Plus, ShieldUser, Trash2, UserRound, X } from "lucide-react";
@@ -48,10 +48,10 @@ function usersApi(path = "", options: RequestInit = {}) {
   return fetch(`${getApiBase()}/users${path}`, {
     credentials: "include",
     ...options,
-    headers: {
+    headers: getJsonHeaders({
       "Content-Type": "application/json",
       ...(options.headers ?? {}),
-    },
+    }),
   });
 }
 
