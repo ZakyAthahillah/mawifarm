@@ -4,7 +4,6 @@ import {
   BarChart3,
   ClipboardList,
   FileClock,
-  Grid3X3,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -16,6 +15,7 @@ import {
   Warehouse,
   Waves,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
@@ -129,9 +129,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex h-full w-full flex-col">
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-5">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#69d85f] to-[#1aa37c] text-white shadow-lg shadow-emerald-900/15">
-                    <Grid3X3 className="h-5 w-5" />
-                  </div>
+                  <MawiFarmLogo className="h-11 w-11" />
                 </div>
               <button
                 type="button"
@@ -199,9 +197,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <div className="flex h-full flex-col">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-[#69d85f] to-[#1aa37c] text-white shadow-lg shadow-emerald-900/15">
-                <Grid3X3 className="h-5 w-5" />
-              </div>
+              <MawiFarmLogo className="h-11 w-11" />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
@@ -294,6 +290,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MawiFarmLogo({ className }: { className: string }) {
+  return (
+    <div className={`relative shrink-0 overflow-hidden rounded-full bg-white shadow-lg shadow-emerald-900/15 ring-2 ring-emerald-50 ${className}`}>
+      <Image
+        src="/mawi-farm-logo.png"
+        alt="Mawi Farm"
+        fill
+        sizes="44px"
+        className="object-cover"
+        priority
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/auth-forms";
-import { Grid3X3 } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   return (
@@ -8,8 +8,15 @@ export default function LoginPage() {
 
       <section className="glass-panel w-full max-w-[440px] rounded-[32px] p-6 sm:p-8">
         <div className="mb-6 flex items-center justify-center">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[#69d85f] to-[#0f7963] text-white shadow-lg shadow-emerald-950/10">
-            <Grid3X3 className="h-6 w-6" />
+          <div className="relative h-16 w-16 overflow-hidden rounded-full bg-white shadow-lg shadow-emerald-950/10 ring-2 ring-white">
+            <Image
+              src="/mawi-farm-logo.png"
+              alt="Mawi Farm"
+              fill
+              sizes="64px"
+              className="object-cover"
+              priority
+            />
           </div>
         </div>
 
