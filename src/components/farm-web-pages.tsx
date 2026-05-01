@@ -2,7 +2,7 @@
 
 import type { ComponentType, FormEvent, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { getApiBase, getOwnerScopeHeaders, readApiError, readJsonResponse } from "@/components/api";
+import { getApiBase, getOwnerScopeHeaders, ownerScopeStorageKey, readApiError, readJsonResponse } from "@/components/api";
 import { PageHeader, StatCard } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 import { QrScannerPanel } from "@/components/qr-scanner";
@@ -325,13 +325,37 @@ function TrendPanel({
 }
 
 export function PenjualanPage() {
+  const { user } = useAuth();
   const [weights, setWeights] = useState<string[]>(() => Array.from({ length: 60 }, () => ""));
   const [price, setPrice] = useState("");
+  const [selectedKandang, setSelectedKandang] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const totalWeight = useMemo(() => weights.reduce((sum, value) => sum + toNumber(value), 0), [weights]);
   const totalPrice = totalWeight * toNumber(price);
+  const ownerOptions = useMemo(() => user?.role === "admin" ? user.owner_options ?? [] : [], [user]);
+  const selectedOwnerName = useMemo(() => {
+    if (user?.role !== "admin") return "";
+
+    const activeOwnerId = typeof window !== "undefined" ? window.localStorage.getItem(ownerScopeStorageKey) ?? "" : "";
+    return ownerOptions.find((owner) => String(owner.id) === activeOwnerId)?.name ?? ownerOptions[0]?.name ?? "";
+  }, [ownerOptions, user?.role]);
+  const penjualanOptions = useMemo(() => {
+    const options = saleTargets.map((target) => ({ name: target.name, hasTarget: true }));
+    const existingNames = new Set(options.map((option) => option.name.trim().toLowerCase()));
+
+    ownerOptions.forEach((owner) => {
+      const name = owner.name.trim();
+      if (name && !existingNames.has(name.toLowerCase())) {
+        options.push({ name, hasTarget: false });
+        existingNames.add(name.toLowerCase());
+      }
+    });
+
+    return options;
+  }, [ownerOptions]);
+  const displayedKandang = selectedKandang || selectedOwnerName;
 
   const updateWeight = (index: number, value: string) => {
     setWeights((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));
@@ -369,8 +393,15 @@ export function PenjualanPage() {
       return;
     }
 
-    if (!saleTargets.some((item) => item.name === kandang)) {
+    const selectedOption = penjualanOptions.find((item) => item.name === kandang);
+    if (!selectedOption) {
       setMessage("Kandang harus dipilih.");
+      setLoading(false);
+      return;
+    }
+
+    if (!selectedOption.hasTarget) {
+      setMessage(`Owner ${selectedOption.name} belum punya target Google Script untuk penjualan.`);
       setLoading(false);
       return;
     }
@@ -402,6 +433,7 @@ export function PenjualanPage() {
 
       setMessage("Data penjualan berhasil dikirim.");
       form.reset();
+      setSelectedKandang("");
       setPrice("");
       setWeights(Array.from({ length: 60 }, () => ""));
     } catch (error) {
@@ -425,9 +457,15 @@ export function PenjualanPage() {
             <input name="tanggal" type="date" required className="field-input" />
           </Field>
           <Field label="Kandang">
-            <select name="kandang" required className="field-input">
+            <select
+              name="kandang"
+              required
+              value={displayedKandang}
+              onChange={(event) => setSelectedKandang(event.target.value)}
+              className="field-input"
+            >
               <option value="">Pilih kandang</option>
-              {saleTargets.map((target) => (
+              {penjualanOptions.map((target) => (
                 <option key={target.name} value={target.name}>{target.name}</option>
               ))}
             </select>
