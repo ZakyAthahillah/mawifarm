@@ -189,7 +189,7 @@ export function QrPrintPage() {
     <div className="space-y-6">
       <PageHeader
         title="QR Print"
-        description="Cetak QR berat telur ke printer thermal dengan format native yang sama seperti aplikasi Android."
+        description="Cetak QR berat telur ke printer thermal."
       />
 
       <div className="grid gap-5 xl:grid-cols-[0.92fr_1fr]">
