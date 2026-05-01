@@ -219,9 +219,6 @@ export function DataTablePage({
   emptyState?: string;
   emptyHint?: string;
 }) {
-  void _description;
-  void _actions;
-
   return (
     <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

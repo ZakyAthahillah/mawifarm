@@ -74,6 +74,8 @@ type KpiResult = {
   nama_kandang?: string;
   nama_periode?: string;
   periode?: {
+    bulan?: number;
+    tahun?: number;
     mulai?: string;
     sampai?: string;
     hari?: number;
