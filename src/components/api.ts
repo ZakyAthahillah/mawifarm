@@ -7,6 +7,13 @@ export function getApiBase() {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
 
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      const parts = hostname.split(".");
+      const rootDomain = parts.length > 2 ? parts.slice(-2).join(".") : hostname;
+
+      return `${protocol}//api.${rootDomain}/api`;
+    }
+
     return `${protocol}//${hostname}:8000/api`;
   }
 
