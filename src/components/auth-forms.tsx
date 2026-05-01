@@ -35,6 +35,15 @@ export function LoginForm() {
         token?: { access_token: string };
       };
 
+      if (response.status === 429) {
+        const seconds = Number(response.headers.get("Retry-After") ?? 0);
+        throw new Error(
+          seconds > 0
+            ? `Terlalu banyak percobaan. Coba lagi dalam ${seconds} detik.`
+            : "Terlalu banyak percobaan. Coba lagi sebentar lagi."
+        );
+      }
+
       if (!response.ok || !data.status || !data.token || !data.data) {
         throw new Error(data.message || "Login gagal");
       }
