@@ -10,6 +10,8 @@ type AuthUser = {
   role: string;
   owner_id?: number | null;
   must_change_password?: boolean;
+  last_login_at?: string | null;
+  last_logout_at?: string | null;
   owner_options?: Array<{ id: number; name: string }>;
 };
 

@@ -290,11 +290,18 @@ export function QrPrintPage() {
   const [message, setMessage] = useState("");
   const [isPrinting, setIsPrinting] = useState(false);
   const [splitFormat, setSplitFormat] = useState(true);
+  const [serialSupported, setSerialSupported] = useState(true);
 
   const printableWeights = useMemo(() => weights.map((weight) => weight.trim()).filter(Boolean), [weights]);
   const totalWeight = useMemo(() => weights.reduce((sum, value) => sum + toNumber(value), 0), [weights]);
   const selectedPreview = printableWeights[0] ?? weights.find((weight) => weight.trim()) ?? "";
-  const serialSupported = typeof navigator !== "undefined" && Boolean((navigator as NavigatorWithSerial).serial);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSerialSupported(Boolean((navigator as NavigatorWithSerial).serial));
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const updateWeight = (index: number, value: string) => {
     setWeights((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));

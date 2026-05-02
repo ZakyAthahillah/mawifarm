@@ -180,6 +180,9 @@ export function ActivityLogsPage() {
   const [maintenanceLoading, setMaintenanceLoading] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [actionFilter, setActionFilter] = useState("");
+  const [moduleFilter, setModuleFilter] = useState("");
+  const [logMessage, setLogMessage] = useState("");
   const isDeveloper = user?.role === "developer";
 
   const loadMaintenance = useCallback(async () => {
@@ -195,18 +198,30 @@ export function ActivityLogsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLogMessage("");
     try {
-      const suffix = search.trim() ? `?user=${encodeURIComponent(search.trim())}` : "";
+      const params = new URLSearchParams();
+      if (search.trim()) params.set("user", search.trim());
+      if (actionFilter) params.set("action", actionFilter);
+      if (moduleFilter) params.set("module", moduleFilter);
+      const suffix = params.toString() ? `?${params.toString()}` : "";
       const response = await developerApi(`/developer/activity-logs${suffix}`);
       const data = await readJsonResponse<{ status?: boolean; data?: ActivityLog[] }>(response);
       if (!response.ok || !data.status) throw new Error("Gagal memuat log");
       setLogs(data.data ?? []);
-    } catch {
+    } catch (error) {
       setLogs([]);
+      setLogMessage(error instanceof Error ? error.message : "Gagal memuat log aktivitas");
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [actionFilter, moduleFilter, search]);
+
+  const resetLogFilters = () => {
+    setSearch("");
+    setActionFilter("");
+    setModuleFilter("");
+  };
 
   useEffect(() => {
     if (!ready || !isDeveloper) return;
@@ -300,14 +315,60 @@ export function ActivityLogsPage() {
               <span key={action} className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">{action}: {count}</span>
             ))}
           </div>
-          <div className="flex gap-2">
-            <input value={search} onChange={(event) => setSearch(event.target.value)} className="field-input max-w-[220px]" placeholder="Cari user/role" />
+          <div className="grid gap-2 sm:grid-cols-[minmax(160px,220px)_150px_150px_auto]">
+            <input value={search} onChange={(event) => setSearch(event.target.value)} className="field-input" placeholder="Cari user/role" />
+            <select value={actionFilter} onChange={(event) => setActionFilter(event.target.value)} className="field-input">
+              <option value="">Semua aksi</option>
+              <option value="login">Login</option>
+              <option value="logout">Logout</option>
+              <option value="create">Tambah</option>
+              <option value="update">Edit</option>
+              <option value="delete">Hapus</option>
+              <option value="change_password">Ganti password</option>
+            </select>
+            <select value={moduleFilter} onChange={(event) => setModuleFilter(event.target.value)} className="field-input">
+              <option value="">Semua modul</option>
+              <option value="auth">Auth</option>
+              <option value="users">Users</option>
+              <option value="kandang">Kandang</option>
+              <option value="produksi">Produksi</option>
+              <option value="pakan">Pakan</option>
+              <option value="operasional">Operasional</option>
+              <option value="qr_print_batch">QR Print</option>
+              <option value="distribution_nota">Nota</option>
+            </select>
             <button disabled={loading} type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-2xl bg-[#0f7963] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d6f5d] disabled:opacity-70">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
+            <button type="button" onClick={resetLogFilters} className="rounded-2xl border border-emerald-950/10 bg-white px-4 py-2 text-sm font-semibold text-[#0f7963] transition hover:bg-emerald-50">
+              Reset
+            </button>
           </div>
         </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[
+            ["", "Semua"],
+            ["login", "Login"],
+            ["logout", "Logout"],
+            ["change_password", "Ganti Password"],
+          ].map(([value, label]) => (
+            <button
+              key={value || "all"}
+              type="button"
+              onClick={() => setActionFilter(value)}
+              className={[
+                "rounded-full px-3 py-1 text-xs font-semibold transition",
+                actionFilter === value ? "bg-[#0f7963] text-white" : "bg-emerald-50 text-[#0f7963] hover:bg-emerald-100",
+              ].join(" ")}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {logMessage ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{logMessage}</p> : null}
 
         <div className="mt-5 overflow-hidden rounded-2xl border border-emerald-950/5">
           <div className="hidden grid-cols-[0.9fr_0.75fr_0.8fr_0.85fr_0.7fr_1fr] bg-[#f3fbf5] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 md:grid">
@@ -323,7 +384,11 @@ export function ActivityLogsPage() {
               <span className="truncate">{log.ip_address ?? "-"}</span>
             </div>
           ))}
-          {!logs.length ? <div className="px-4 py-8 text-sm text-slate-500">{loading ? "Memuat log..." : "Belum ada log."}</div> : null}
+          {!logs.length ? (
+            <div className="px-4 py-8 text-sm text-slate-500">
+              {loading ? "Memuat log..." : search || actionFilter || moduleFilter ? "Tidak ada log yang cocok dengan filter." : "Belum ada log."}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
