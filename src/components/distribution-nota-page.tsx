@@ -96,7 +96,9 @@ function formatNumber(value: number, digits = 2) {
 }
 
 function todayString() {
-  return new Date().toISOString().slice(0, 10);
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 10);
 }
 
 function notaQrPayload(nota: DistributionNota) {
@@ -405,7 +407,7 @@ export function DistributionNotaPage() {
         description="Buat nota timbang, cetak thermal, lalu QR-nya bisa dipakai untuk input penjualan."
       />
 
-      <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+      <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <label className="block flex-1">
             <span className="mb-2 block text-sm font-medium text-slate-600">Printer</span>
@@ -434,7 +436,7 @@ export function DistributionNotaPage() {
         </div>
       </div>
 
-      <form onSubmit={(event) => void submit(event)} className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+      <form onSubmit={(event) => void submit(event)} className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-950">{editing ? `Edit ${editing.nomor_nota}` : "Nota Baru"}</h2>
@@ -450,7 +452,7 @@ export function DistributionNotaPage() {
           </button>
         </div>
 
-        <div className="mt-5 rounded-[22px] border border-emerald-950/5 bg-white p-4 shadow-sm">
+        <div className="mt-5 rounded-[20px] border border-emerald-950/5 bg-white p-3 shadow-sm sm:rounded-[22px] sm:p-4">
           <div className="grid gap-4 md:grid-cols-3">
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-600">Tanggal</span>
@@ -473,7 +475,7 @@ export function DistributionNotaPage() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-[20px] border border-emerald-100 bg-[#f6fbf8] p-4">
+          <div className="mt-5 rounded-[18px] border border-emerald-100 bg-[#f6fbf8] p-3 sm:rounded-[20px] sm:p-4">
             <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Input Berat</h3>
@@ -484,7 +486,7 @@ export function DistributionNotaPage() {
             <div className="mb-5">
               <QrScannerPanel onScan={fillNextWeight} />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
               {weights.map((value, index) => (
                 <label key={index} className="block">
                   <span className="mb-1 block text-xs font-semibold text-slate-500">Berat {index + 1}</span>
@@ -505,14 +507,14 @@ export function DistributionNotaPage() {
 
         {message ? <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-[#0f7963]">{message}</p> : null}
 
-        <button disabled={loading} className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#0f7963] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d] disabled:opacity-70">
+        <button disabled={loading} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0f7963] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d] disabled:opacity-70 sm:w-auto">
           <Save className="h-4 w-4" />
           {loading ? "Menyimpan..." : editing ? "Update Nota" : "Simpan Nota"}
         </button>
       </form>
 
       {selected ? (
-        <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+        <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-950">{selected.nomor_nota}</h2>
@@ -532,7 +534,23 @@ export function DistributionNotaPage() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-[26px] border border-white/70 bg-white/85 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+      <div className="rounded-[22px] border border-white/70 bg-white/85 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px]">
+        <div className="grid gap-3 p-4 md:hidden">
+          {rows.length > 0 ? rows.map((row) => (
+            <NotaCard
+              key={row.id}
+              row={row}
+              printing={printingId === row.id}
+              onShow={() => setSelected(row)}
+              onEdit={() => editRow(row)}
+              onPrint={() => void printNota(row)}
+              onDelete={() => void deleteRow(row)}
+            />
+          )) : (
+            <div className="py-4 text-sm text-slate-500">Belum ada nota.</div>
+          )}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
         <div className="grid min-w-[860px] grid-cols-[1fr_1fr_1fr_1fr_220px] bg-[#f3fbf5] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           <span>Tanggal</span>
           <span>Kandang</span>
@@ -540,7 +558,6 @@ export function DistributionNotaPage() {
           <span>Total</span>
           <span>Aksi</span>
         </div>
-        <div className="overflow-x-auto">
           {rows.length > 0 ? rows.map((row) => (
             <div key={row.id} className="grid min-w-[860px] grid-cols-[1fr_1fr_1fr_1fr_220px] items-center border-t border-emerald-950/5 px-5 py-4 text-sm text-slate-700">
               <span>{row.tanggal}</span>
@@ -589,5 +606,42 @@ function IconButton({
     >
       <Icon className="h-4 w-4" />
     </button>
+  );
+}
+
+function NotaCard({
+  row,
+  printing,
+  onShow,
+  onEdit,
+  onPrint,
+  onDelete,
+}: {
+  row: DistributionNota;
+  printing: boolean;
+  onShow: () => void;
+  onEdit: () => void;
+  onPrint: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-emerald-950/5 bg-white p-4 text-sm shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-slate-950">{row.nomor_nota}</p>
+          <p className="mt-1 text-xs font-medium text-slate-500">{row.tanggal}</p>
+        </div>
+        <span className="shrink-0 rounded-xl bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">
+          {formatNumber(row.total_berat)} kg
+        </span>
+      </div>
+      <p className="mt-3 break-words text-sm font-semibold text-slate-800">{row.kandang}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <IconButton title="Show" onClick={onShow} icon={Eye} />
+        <IconButton title="Edit" onClick={onEdit} icon={Pencil} />
+        <IconButton title="Print" onClick={onPrint} icon={Printer} disabled={printing} />
+        <IconButton title="Delete" onClick={onDelete} icon={Trash2} danger />
+      </div>
+    </div>
   );
 }

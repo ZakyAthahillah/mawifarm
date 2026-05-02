@@ -1269,12 +1269,28 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
         if (productionBatch.id_kandang) {
           next.id_kandang = productionBatch.id_kandang;
         }
+        if (productionBatch.tanggal) {
+          next.tanggal = productionBatch.tanggal;
+        }
+
+        if (productionBatch.mode === "single") {
+          const target = productionWeightFields.find((field) => !next[field.name]);
+          if (target) {
+            next[target.name] = productionBatch.weights[0] ?? "";
+          }
+          return next;
+        }
+
         productionWeightFields.forEach((field, index) => {
           next[field.name] = productionBatch.weights[index] ?? "";
         });
         return next;
       });
-      setMessage(`Batch ${productionBatch.batch || "-"} dimuat dari QR.`);
+      setMessage(
+        productionBatch.mode === "single"
+          ? "Berat, tanggal, dan kandang dimuat dari QR."
+          : `Batch ${productionBatch.batch || "-"} dimuat dari QR.`
+      );
       return;
     }
 
@@ -1450,16 +1466,35 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
   );
 }
 
-function parseProductionBatchQr(value: string): { batch: string; id_kandang: string; weights: string[] } | null {
+function parseProductionBatchQr(value: string): { mode: "batch" | "single"; batch: string; tanggal: string; id_kandang: string; weights: string[] } | null {
   try {
-    const data = JSON.parse(value) as { type?: string; batch?: string; id_kandang?: string | number; weights?: Array<string | number> };
+    const data = JSON.parse(value) as {
+      type?: string;
+      batch?: string;
+      tanggal?: string;
+      id_kandang?: string | number;
+      weight?: string | number;
+      weights?: Array<string | number>;
+    };
+
+    if (data.type === "mawifarm_production_weight" && data.weight !== undefined) {
+      return {
+        mode: "single",
+        batch: String(data.batch ?? ""),
+        tanggal: String(data.tanggal ?? ""),
+        id_kandang: data.id_kandang ? String(data.id_kandang) : "",
+        weights: [String(data.weight).replace(",", ".")],
+      };
+    }
 
     if (data.type !== "mawifarm_production_weights" || !Array.isArray(data.weights)) {
       return null;
     }
 
     return {
+      mode: "batch",
       batch: String(data.batch ?? ""),
+      tanggal: String(data.tanggal ?? ""),
       id_kandang: data.id_kandang ? String(data.id_kandang) : "",
       weights: data.weights.map((weight) => String(weight).replace(",", ".")),
     };
