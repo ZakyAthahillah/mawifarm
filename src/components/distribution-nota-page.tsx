@@ -452,7 +452,7 @@ export function DistributionNotaPage() {
           </button>
         </div>
 
-        <div className="mt-5 rounded-[20px] border border-emerald-950/5 bg-white p-3 shadow-sm sm:rounded-[22px] sm:p-4">
+        <div className="mt-5 space-y-5">
           <div className="grid gap-4 md:grid-cols-3">
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-600">Tanggal</span>
@@ -475,7 +475,7 @@ export function DistributionNotaPage() {
             </div>
           </div>
 
-          <div className="mt-5 rounded-[18px] border border-emerald-100 bg-[#f6fbf8] p-3 sm:rounded-[20px] sm:p-4">
+          <div>
             <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Input Berat</h3>
@@ -484,7 +484,7 @@ export function DistributionNotaPage() {
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0f7963]">1 - 50</span>
             </div>
             <div className="mb-5">
-              <QrScannerPanel onScan={fillNextWeight} />
+              <QrScannerPanel onScan={fillNextWeight} compact />
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
               {weights.map((value, index) => (

@@ -5,7 +5,7 @@ import { BarcodeFormat, DecodeHintType, NotFoundException } from "@zxing/library
 import { Camera, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export function QrScannerPanel({ onScan }: { onScan: (value: string) => void }) {
+export function QrScannerPanel({ onScan, compact = false }: { onScan: (value: string) => void; compact?: boolean }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const readerRef = useRef<BrowserQRCodeReader | null>(null);
@@ -117,18 +117,22 @@ export function QrScannerPanel({ onScan }: { onScan: (value: string) => void }) 
   };
 
   return (
-    <div className="rounded-2xl bg-[#f6fbf8] p-4">
+    <div className={compact ? "rounded-2xl bg-[#f6fbf8] p-3" : "rounded-2xl bg-[#f6fbf8] p-4"}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-900">Scan QR Berat</p>
-          <p className="mt-1 text-sm text-slate-500">Hasil scan otomatis masuk ke kolom berat kosong berikutnya.</p>
+          {!compact ? (
+            <p className="mt-1 text-sm text-slate-500">Hasil scan otomatis masuk ke kolom berat kosong berikutnya.</p>
+          ) : null}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => void start()}
             disabled={active}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#0f7963] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d6f5d] disabled:opacity-60"
+            className={compact
+              ? "inline-flex items-center gap-2 rounded-xl bg-[#0f7963] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0d6f5d] disabled:opacity-60"
+              : "inline-flex items-center gap-2 rounded-2xl bg-[#0f7963] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d6f5d] disabled:opacity-60"}
           >
             <Camera className="h-4 w-4" />
             Scan
@@ -137,7 +141,9 @@ export function QrScannerPanel({ onScan }: { onScan: (value: string) => void }) 
             type="button"
             onClick={() => void stop()}
             disabled={!active}
-            className="inline-flex items-center gap-2 rounded-2xl border border-emerald-950/10 bg-white px-4 py-2.5 text-sm font-semibold text-[#0f7963] transition hover:bg-emerald-50 disabled:opacity-60"
+            className={compact
+              ? "inline-flex items-center gap-2 rounded-xl border border-emerald-950/10 bg-white px-3 py-2 text-xs font-semibold text-[#0f7963] transition hover:bg-emerald-50 disabled:opacity-60"
+              : "inline-flex items-center gap-2 rounded-2xl border border-emerald-950/10 bg-white px-4 py-2.5 text-sm font-semibold text-[#0f7963] transition hover:bg-emerald-50 disabled:opacity-60"}
           >
             <Square className="h-4 w-4" />
             Stop
@@ -145,7 +151,9 @@ export function QrScannerPanel({ onScan }: { onScan: (value: string) => void }) 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-2xl border border-emerald-950/10 bg-white px-4 py-2.5 text-sm font-semibold text-[#0f7963] transition hover:bg-emerald-50"
+            className={compact
+              ? "inline-flex items-center gap-2 rounded-xl border border-emerald-950/10 bg-white px-3 py-2 text-xs font-semibold text-[#0f7963] transition hover:bg-emerald-50"
+              : "inline-flex items-center gap-2 rounded-2xl border border-emerald-950/10 bg-white px-4 py-2.5 text-sm font-semibold text-[#0f7963] transition hover:bg-emerald-50"}
           >
             Upload QR
           </button>
@@ -196,9 +204,11 @@ export function QrScannerPanel({ onScan }: { onScan: (value: string) => void }) 
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-slate-500">
-        Pusatkan QR di kotak hijau. Setelah terbaca, kamera akan berhenti sendiri. Tekan Scan lagi untuk data berikutnya.
-      </p>
+      {!compact ? (
+        <p className="mt-3 text-xs text-slate-500">
+          Pusatkan QR di kotak hijau. Setelah terbaca, kamera akan berhenti sendiri. Tekan Scan lagi untuk data berikutnya.
+        </p>
+      ) : null}
 
       {message ? <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">{message}</p> : null}
     </div>
