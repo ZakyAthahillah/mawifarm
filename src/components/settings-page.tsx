@@ -46,6 +46,11 @@ export function SettingsPage() {
       setCurrentPassword("");
       setPassword("");
       setPasswordConfirmation("");
+      if (user?.must_change_password) {
+        window.setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 800);
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Gagal mengganti password");
     } finally {
@@ -56,6 +61,12 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Akun" description="Kelola keamanan akun dan password login." />
+
+      {user?.must_change_password ? (
+        <div className="rounded-[26px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+          Developer mewajibkan akun ini mengganti password sebelum melanjutkan.
+        </div>
+      ) : null}
 
       <form onSubmit={(event) => void submit(event)} className="w-full rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:p-6">
         <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">

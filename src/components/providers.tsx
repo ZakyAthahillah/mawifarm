@@ -9,6 +9,7 @@ type AuthUser = {
   username: string;
   role: string;
   owner_id?: number | null;
+  must_change_password?: boolean;
   owner_options?: Array<{ id: number; name: string }>;
 };
 

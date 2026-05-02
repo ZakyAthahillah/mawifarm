@@ -34,6 +34,11 @@ type ActivityLog = {
   created_at?: string | null;
 };
 
+type MaintenanceState = {
+  enabled: boolean;
+  message: string;
+};
+
 function developerApi(path: string, options: RequestInit = {}) {
   return fetch(`${getApiBase()}${path}`, {
     credentials: "include",
@@ -170,9 +175,23 @@ export function KandangAccessPage() {
 export function ActivityLogsPage() {
   const { user, ready } = useAuth();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [maintenance, setMaintenance] = useState<MaintenanceState>({ enabled: false, message: "" });
   const [loading, setLoading] = useState(false);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [search, setSearch] = useState("");
   const isDeveloper = user?.role === "developer";
+
+  const loadMaintenance = useCallback(async () => {
+    try {
+      const response = await developerApi("/maintenance");
+      const data = await readJsonResponse<{ status?: boolean; data?: MaintenanceState }>(response);
+      if (!response.ok || !data.status) throw new Error("Gagal memuat maintenance");
+      setMaintenance(data.data ?? { enabled: false, message: "" });
+    } catch {
+      setMaintenance({ enabled: false, message: "" });
+    }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -193,10 +212,34 @@ export function ActivityLogsPage() {
     if (!ready || !isDeveloper) return;
     const timer = window.setTimeout(() => {
       void load();
+      void loadMaintenance();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [ready, isDeveloper, load]);
+  }, [ready, isDeveloper, load, loadMaintenance]);
+
+  const saveMaintenance = async (enabled: boolean) => {
+    setMaintenanceLoading(true);
+    setMaintenanceMessage("");
+    try {
+      const response = await developerApi("/developer/maintenance", {
+        method: "PUT",
+        body: JSON.stringify({
+          enabled,
+          message: maintenance.message,
+        }),
+      });
+      const data = await readJsonResponse<{ status?: boolean; message?: string; data?: MaintenanceState }>(response);
+      if (!response.ok || !data.status) throw new Error(data.message || "Gagal menyimpan maintenance");
+      setMaintenance(data.data ?? { enabled, message: maintenance.message });
+      setMaintenanceMessage(data.message || "Status maintenance berhasil disimpan");
+      await load();
+    } catch (error) {
+      setMaintenanceMessage(error instanceof Error ? error.message : "Gagal menyimpan maintenance");
+    } finally {
+      setMaintenanceLoading(false);
+    }
+  };
 
   const actionStats = useMemo(() => {
     const counts = new Map<string, number>();
@@ -210,6 +253,45 @@ export function ActivityLogsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Log Aktivitas" description="Riwayat login, logout, tambah, edit, hapus, dan perubahan akses." />
+
+      <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-900">Maintenance</h2>
+            <p className="mt-1 text-sm text-slate-500">Aktifkan banner pengumuman tanpa restart aplikasi.</p>
+            <textarea
+              value={maintenance.message}
+              onChange={(event) => setMaintenance((current) => ({ ...current, message: event.target.value }))}
+              className="mt-4 min-h-24 w-full rounded-2xl border border-emerald-950/10 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#0f7963]"
+              placeholder="Contoh: Info: Mawi Farm akan maintenance malam ini pukul 22.00-23.00 WITA."
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={maintenanceLoading || !maintenance.message.trim()}
+              onClick={() => void saveMaintenance(true)}
+              className="rounded-2xl bg-[#0f7963] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d] disabled:opacity-60"
+            >
+              Aktifkan
+            </button>
+            <button
+              type="button"
+              disabled={maintenanceLoading}
+              onClick={() => void saveMaintenance(false)}
+              className="rounded-2xl border border-emerald-950/10 bg-white px-5 py-3 text-sm font-semibold text-[#0f7963] transition hover:bg-emerald-50 disabled:opacity-60"
+            >
+              Matikan
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className={maintenance.enabled ? "rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700" : "rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"}>
+            {maintenance.enabled ? "Maintenance aktif" : "Maintenance nonaktif"}
+          </span>
+          {maintenanceMessage ? <span className="text-sm font-semibold text-[#0f7963]">{maintenanceMessage}</span> : null}
+        </div>
+      </div>
 
       <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -13,6 +13,7 @@ type UserRecord = {
   username: string;
   role: string;
   owner_id?: number | null;
+  must_change_password?: boolean;
   owner_name?: string | null;
   owner_ids?: number[];
   owner_names?: string[];
@@ -25,6 +26,7 @@ type UserForm = {
   username: string;
   password: string;
   role: string;
+  must_change_password: boolean;
   owner_ids: string[];
 };
 
@@ -34,6 +36,7 @@ const emptyForm: UserForm = {
   username: "",
   password: "",
   role: "user",
+  must_change_password: false,
   owner_ids: [],
 };
 
@@ -41,6 +44,7 @@ const roleOptions = [
   { label: "Developer", value: "developer" },
   { label: "Admin", value: "admin" },
   { label: "Owner", value: "owner" },
+  { label: "Distribution", value: "distribution" },
   { label: "Farm Worker", value: "farm_worker" },
   { label: "User", value: "user" },
 ];
@@ -120,6 +124,7 @@ export function UsersAdminPage() {
       username: record.username ?? "",
       password: "",
       role: record.role ?? "user",
+      must_change_password: Boolean(record.must_change_password),
       owner_ids: (record.owner_ids ?? (record.owner_id ? [record.owner_id] : [])).map((id) => String(id)),
     });
     setMessage("");
@@ -134,11 +139,12 @@ export function UsersAdminPage() {
     setError("");
 
     try {
-      const payload: Record<string, string | string[] | null> = {
+      const payload: Record<string, string | string[] | boolean | null> = {
         name: form.name.trim(),
         email: form.email.trim(),
         username: form.username.trim(),
         role: form.role,
+        must_change_password: form.must_change_password,
       };
 
       const usesOwnerData = form.role === "admin" || form.role === "farm_worker";
@@ -268,6 +274,15 @@ export function UsersAdminPage() {
                 ))}
               </select>
             </Field>
+            <label className="flex items-center gap-3 rounded-2xl bg-emerald-50/70 px-4 py-3 text-sm font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.must_change_password}
+                onChange={(event) => setForm((current) => ({ ...current, must_change_password: event.target.checked }))}
+                className="h-4 w-4 accent-[#0f7963]"
+              />
+              Wajib ganti password saat login
+            </label>
             {(form.role === "admin" || form.role === "farm_worker") ? (
               <Field label="Owner Data">
                 <div className="grid gap-2 rounded-2xl border border-emerald-950/10 bg-white p-3">
@@ -339,6 +354,7 @@ export function UsersAdminPage() {
                 <div className="mt-4 space-y-2 text-sm">
                   <Row label="Email" value={record.email} />
                   <Row label="Owner Data" value={record.role === "admin" || record.role === "farm_worker" ? ownerNames(record) : "-"} />
+                  <Row label="Wajib Ganti Password" value={record.must_change_password ? "Ya" : "Tidak"} />
                   <Row label="Dibuat" value={record.created_at ?? "-"} />
                 </div>
                 <div className="mt-4 flex justify-end gap-2">
@@ -354,19 +370,20 @@ export function UsersAdminPage() {
             {!users.length ? <div className="rounded-2xl border border-dashed border-emerald-950/10 bg-white px-4 py-8 text-sm text-slate-500">Belum ada user.</div> : null}
           </div>
 
-          <div className="mt-5 hidden overflow-hidden rounded-2xl border border-emerald-950/5 md:block">
-            <div className="grid grid-cols-[1.1fr_1fr_0.75fr_0.75fr_0.85fr_0.8fr_0.75fr] bg-[#f3fbf5] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              {["Nama", "Email", "Username", "Role", "Owner", "Dibuat", "Aksi"].map((column) => (
+          <div className="mt-5 hidden overflow-x-auto rounded-2xl border border-emerald-950/5 md:block">
+            <div className="grid min-w-[1080px] grid-cols-[1.1fr_1fr_0.75fr_0.75fr_0.85fr_0.85fr_0.8fr_0.75fr] bg-[#f3fbf5] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {["Nama", "Email", "Username", "Role", "Owner", "Ganti Password", "Dibuat", "Aksi"].map((column) => (
                 <span key={column}>{column}</span>
               ))}
             </div>
             {users.map((record) => (
-              <div key={record.id} className="grid grid-cols-[1.1fr_1fr_0.75fr_0.75fr_0.85fr_0.8fr_0.75fr] border-t border-emerald-950/5 px-4 py-4 text-sm text-slate-700">
+              <div key={record.id} className="grid min-w-[1080px] grid-cols-[1.1fr_1fr_0.75fr_0.75fr_0.85fr_0.85fr_0.8fr_0.75fr] border-t border-emerald-950/5 px-4 py-4 text-sm text-slate-700">
                 <span className="font-semibold text-slate-900">{record.name}</span>
                 <span>{record.email}</span>
                 <span>{record.username}</span>
                 <span className="capitalize">{record.role}</span>
                 <span>{record.role === "admin" || record.role === "farm_worker" ? ownerNames(record) : "-"}</span>
+                <span>{record.must_change_password ? "Wajib" : "-"}</span>
                 <span>{record.created_at ?? "-"}</span>
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => startEdit(record)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]">

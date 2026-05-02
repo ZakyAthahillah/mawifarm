@@ -31,7 +31,7 @@ export function LoginForm() {
       const data = (await readJsonResponse(response)) as {
         status: boolean;
         message: string;
-        data?: { id: number; name: string; username: string; role: string };
+        data?: { id: number; name: string; username: string; role: string; must_change_password?: boolean };
         token?: { access_token: string };
       };
 
@@ -49,7 +49,7 @@ export function LoginForm() {
       }
 
       login({ token: data.token.access_token, user: data.data });
-      router.push("/dashboard");
+      router.push(data.data.must_change_password ? "/dashboard/pengaturan" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login gagal");
     } finally {

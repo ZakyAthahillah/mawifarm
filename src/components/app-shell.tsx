@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   PanelRightClose,
   Printer,
+  ReceiptText,
   Settings,
   ShieldUser,
   ShoppingCart,
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { label: "Kandang", href: "/dashboard/kandang", icon: Warehouse },
   { label: "Produksi", href: "/dashboard/produksi", icon: ClipboardList },
   { label: "Penjualan", href: "/dashboard/penjualan", icon: ShoppingCart },
+  { label: "Nota", href: "/dashboard/distribution/nota", icon: ReceiptText },
   { label: "QR Print", href: "/dashboard/qr-print", icon: Printer },
   { label: "Pakan", href: "/dashboard/pakan", icon: Package2 },
   { label: "Operasional", href: "/dashboard/operasional", icon: FileClock },
@@ -54,15 +56,20 @@ function canAccessPath(role: string | undefined, pathname: string) {
     return allowedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   }
 
+  if (role === "distribution") {
+    const allowedPrefixes = ["/dashboard/distribution/nota", "/dashboard/pengaturan"];
+    return allowedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  }
+
   if (pathname === "/dashboard") {
     return true;
   }
 
   const deniedByRole: Record<string, string[]> = {
     developer: [],
-    owner: ["/dashboard/users", "/dashboard/penjualan", "/dashboard/kandang-access", "/dashboard/activity-logs"],
-    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/kandang-access", "/dashboard/activity-logs"],
-    user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    owner: ["/dashboard/users", "/dashboard/penjualan", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
   };
 
   const blockedPrefixes = deniedByRole[role ?? "user"] ?? deniedByRole.user;
@@ -84,6 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [ownerScope, setOwnerScope] = useState("");
+  const [maintenanceMessage, setMaintenanceMessage] = useState(process.env.NEXT_PUBLIC_MAINTENANCE_MESSAGE?.trim() ?? "");
 
   const visibleNavItems = navItems.filter((item) => canAccessPath(user?.role, item.href));
   const canChooseOwnerScope = user?.role === "admin" || user?.role === "farm_worker";
@@ -98,9 +106,17 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (ready && !canAccessPath(user?.role, pathname) && pathname !== "/login") {
-      router.replace(user?.role === "farm_worker" ? "/dashboard/kandang" : "/dashboard");
+      router.replace(user?.role === "farm_worker" ? "/dashboard/kandang" : user?.role === "distribution" ? "/dashboard/distribution/nota" : "/dashboard");
     }
   }, [pathname, ready, router, user?.role]);
+
+  useEffect(() => {
+    if (!ready || !user?.must_change_password || pathname === "/login") return;
+
+    if (pathname !== "/dashboard/pengaturan") {
+      router.replace("/dashboard/pengaturan");
+    }
+  }, [pathname, ready, router, user]);
 
   useEffect(() => {
     if (!ready || !canChooseOwnerScope || ownerOptions.length === 0) return;
@@ -117,6 +133,37 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.localStorage.removeItem(ownerScopeStorageKey);
     }
   }, [canChooseOwnerScope, ready]);
+
+  useEffect(() => {
+    if (!ready || !user) return;
+
+    let cancelled = false;
+    const loadMaintenance = async () => {
+      try {
+        const response = await fetch(`${getApiBase()}/maintenance`, {
+          credentials: "include",
+          headers: getJsonHeaders(),
+        });
+        const data = await response.json() as { status?: boolean; data?: { enabled?: boolean; message?: string } };
+
+        if (!cancelled && data.status) {
+          setMaintenanceMessage(data.data?.enabled ? data.data.message?.trim() ?? "" : "");
+        }
+      } catch {
+        // Keep the env fallback if the dynamic endpoint is unavailable.
+      }
+    };
+
+    void loadMaintenance();
+    const timer = window.setInterval(() => {
+      void loadMaintenance();
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [ready, user]);
 
   const handleLogout = async () => {
     try {
@@ -263,6 +310,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           ].join(" ")}
         >
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
+            {maintenanceMessage ? (
+              <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 sm:px-6 lg:px-8">
+                {maintenanceMessage}
+              </div>
+            ) : null}
             <div className="flex items-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
               <button
                 type="button"

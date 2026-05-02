@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getApiBase, getOwnerScopeHeaders, readApiError, readJsonResponse } from "@/components/api";
 import { PageHeader, WideTablePage } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
@@ -13,6 +13,20 @@ type SectionKey = "kandang" | "produksi" | "pakan" | "operasional";
 
 type ApiRecord = Record<string, string | number | null>;
 type ApiListResponse = ApiRecord[] | { data?: ApiRecord[] };
+
+type MortalityLog = {
+  id: number;
+  id_kandang: number;
+  nama_kandang: string;
+  primary_owner_id?: number | null;
+  primary_owner_name?: string | null;
+  nama_periode?: string | null;
+  tanggal: string;
+  jumlah_kematian: number;
+  creator_name?: string | null;
+  created_at?: string | null;
+  can_edit?: boolean;
+};
 
 type FieldDef = {
   name: string;
@@ -41,7 +55,7 @@ type SectionConfig = {
   normalizePayload: (values: Record<string, string>) => Record<string, unknown>;
 };
 
-const productionWeightFields = Array.from({ length: 25 }, (_, index) => ({
+const productionWeightFields = Array.from({ length: 30 }, (_, index) => ({
   name: `berat${index + 1}`,
   label: `Berat ${index + 1}`,
   type: "number",
@@ -421,7 +435,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
   const [error, setError] = useState("");
   const [kandangFilter, setKandangFilter] = useState("");
   const [tanggalFilter, setTanggalFilter] = useState("");
-  const [kandangAction, setKandangAction] = useState<"periode" | "mati" | "koreksi">("periode");
+  const [kandangAction, setKandangAction] = useState<"periode" | "mati" | "riwayat">("periode");
   const [periodForm, setPeriodForm] = useState({
     id_kandang: "",
     nama_periode: "",
@@ -432,8 +446,9 @@ export function SectionListView({ section }: { section: SectionKey }) {
   const [periodMessage, setPeriodMessage] = useState("");
   const [mortalityForm, setMortalityForm] = useState({ id_kandang: "", jumlah_kematian: "" });
   const [mortalityMessage, setMortalityMessage] = useState("");
-  const [mortalityCorrectionForm, setMortalityCorrectionForm] = useState({ id_kandang: "", jumlah_koreksi: "" });
-  const [mortalityCorrectionMessage, setMortalityCorrectionMessage] = useState("");
+  const [mortalityLogs, setMortalityLogs] = useState<MortalityLog[]>([]);
+  const [mortalityDrafts, setMortalityDrafts] = useState<Record<number, { tanggal: string; jumlah_kematian: string }>>({});
+  const [mortalityHistoryMessage, setMortalityHistoryMessage] = useState("");
   const config = sectionConfig[section] ?? null;
   const showTotalHarga = canSeeTotalHarga(user?.role);
   const isFarmWorker = user?.role === "farm_worker";
@@ -506,6 +521,37 @@ export function SectionListView({ section }: { section: SectionKey }) {
   }, [config, ready, token, user?.name]);
 
   const activeKandangAction = isFarmWorker && kandangAction === "periode" ? "mati" : kandangAction;
+
+  const loadMortalityLogs = useCallback(async () => {
+    if (!ready || section !== "kandang") return;
+
+    try {
+      const response = await apiRequest(`${getApiBase()}/kandang/kematian`, token);
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      const data = await readJsonResponse<{ status?: boolean; data?: MortalityLog[] }>(response);
+      const logs = data.data ?? [];
+      setMortalityLogs(logs);
+      setMortalityDrafts(Object.fromEntries(logs.map((log) => [log.id, {
+        tanggal: log.tanggal,
+        jumlah_kematian: String(log.jumlah_kematian),
+      }])));
+    } catch {
+      setMortalityLogs([]);
+      setMortalityDrafts({});
+    }
+  }, [ready, section, token]);
+
+  useEffect(() => {
+    if (!ready || section !== "kandang") return;
+
+    const timer = window.setTimeout(() => {
+      void loadMortalityLogs();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [ready, section, token, loadMortalityLogs]);
 
   const kandangOptions = useMemo(() => {
     if (section !== "produksi") return [];
@@ -655,6 +701,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
         body: JSON.stringify({
           id_kandang: Number(mortalityForm.id_kandang || 0),
           jumlah_kematian: Number(mortalityForm.jumlah_kematian || 0),
+          tanggal: new Date().toISOString().slice(0, 10),
         }),
       });
 
@@ -665,22 +712,23 @@ export function SectionListView({ section }: { section: SectionKey }) {
       setMortalityMessage("Kematian ayam berhasil dicatat.");
       setMortalityForm({ id_kandang: "", jumlah_kematian: "" });
       await loadRows(false);
+      await loadMortalityLogs();
     } catch (caughtError) {
       setMortalityMessage(caughtError instanceof Error && caughtError.message ? caughtError.message : "Gagal mencatat kematian ayam.");
     }
   };
 
-  const correctMortality = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!ready || section !== "kandang") return;
+  const updateMortalityLog = async (log: MortalityLog) => {
+    const draft = mortalityDrafts[log.id];
+    if (!draft) return;
 
-    setMortalityCorrectionMessage("");
+    setMortalityHistoryMessage("");
     try {
-      const response = await apiRequest(`${getApiBase()}/kandang/koreksi-mati`, token, {
-        method: "POST",
+      const response = await apiRequest(`${getApiBase()}/kandang/kematian/${log.id}`, token, {
+        method: "PUT",
         body: JSON.stringify({
-          id_kandang: Number(mortalityCorrectionForm.id_kandang || 0),
-          jumlah_koreksi: Number(mortalityCorrectionForm.jumlah_koreksi || 0),
+          tanggal: draft.tanggal,
+          jumlah_kematian: Number(draft.jumlah_kematian || 0),
         }),
       });
 
@@ -688,11 +736,32 @@ export function SectionListView({ section }: { section: SectionKey }) {
         throw new Error(await readApiError(response));
       }
 
-      setMortalityCorrectionMessage("Koreksi kematian berhasil disimpan.");
-      setMortalityCorrectionForm({ id_kandang: "", jumlah_koreksi: "" });
+      setMortalityHistoryMessage("Catatan kematian berhasil dikoreksi.");
       await loadRows(false);
+      await loadMortalityLogs();
     } catch (caughtError) {
-      setMortalityCorrectionMessage(caughtError instanceof Error && caughtError.message ? caughtError.message : "Gagal menyimpan koreksi kematian.");
+      setMortalityHistoryMessage(caughtError instanceof Error && caughtError.message ? caughtError.message : "Gagal menyimpan koreksi kematian.");
+    }
+  };
+
+  const deleteMortalityLog = async (log: MortalityLog) => {
+    if (!window.confirm("Hapus catatan kematian ini?")) return;
+
+    setMortalityHistoryMessage("");
+    try {
+      const response = await apiRequest(`${getApiBase()}/kandang/kematian/${log.id}`, token, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      setMortalityHistoryMessage("Catatan kematian berhasil dihapus.");
+      await loadRows(false);
+      await loadMortalityLogs();
+    } catch (caughtError) {
+      setMortalityHistoryMessage(caughtError instanceof Error && caughtError.message ? caughtError.message : "Gagal menghapus catatan kematian.");
     }
   };
 
@@ -724,10 +793,10 @@ export function SectionListView({ section }: { section: SectionKey }) {
               </div>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-600">Jenis Aksi</span>
-                <select value={activeKandangAction} onChange={(event) => setKandangAction(event.target.value as "periode" | "mati" | "koreksi")} className="field-input">
+                <select value={activeKandangAction} onChange={(event) => setKandangAction(event.target.value as "periode" | "mati" | "riwayat")} className="field-input">
                   {!isFarmWorker ? <option value="periode">Tambah Periode</option> : null}
                   <option value="mati">Catat Kematian</option>
-                  <option value="koreksi">Batalkan Salah Input</option>
+                  <option value="riwayat">Riwayat Kematian</option>
                 </select>
               </label>
             </div>
@@ -800,32 +869,64 @@ export function SectionListView({ section }: { section: SectionKey }) {
               </form>
             ) : null}
 
-            {activeKandangAction === "koreksi" ? (
-              <form onSubmit={(event) => void correctMortality(event)}>
-                <div className="grid gap-3 md:grid-cols-[1fr_220px]">
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-slate-600">Kandang</span>
-                    <select value={mortalityCorrectionForm.id_kandang} onChange={(event) => setMortalityCorrectionForm((current) => ({ ...current, id_kandang: event.target.value }))} className="field-input" required>
-                      <option value="">Pilih kandang</option>
-                      {rows.map((record) => (
-                        <option key={String(config.rowId(record))} value={String(config.rowId(record))}>
-                          {formatKandangRecord(record, user)} - {String(record.nama_periode ?? "-")}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-slate-600">Jumlah yang Dibatalkan</span>
-                    <input value={mortalityCorrectionForm.jumlah_koreksi} onChange={(event) => setMortalityCorrectionForm((current) => ({ ...current, jumlah_koreksi: event.target.value }))} type="number" min="1" className="field-input" placeholder="0" required />
-                  </label>
-                </div>
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button type="submit" className="inline-flex items-center justify-center rounded-2xl bg-[#0f7963] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d]">
-                    Batalkan Input
+            {activeKandangAction === "riwayat" ? (
+              <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900">Riwayat Kematian</h4>
+                    <p className="text-sm text-slate-600">Pilih catatan yang salah, lalu koreksi jumlahnya atau hapus catatannya.</p>
+                  </div>
+                  <button type="button" onClick={() => void loadMortalityLogs()} className="rounded-2xl border border-emerald-950/10 bg-white px-4 py-2 text-sm font-semibold text-[#0f7963] hover:bg-emerald-50">
+                    Refresh
                   </button>
-                  {mortalityCorrectionMessage ? <p className="text-sm font-semibold text-[#0f7963]">{mortalityCorrectionMessage}</p> : null}
                 </div>
-              </form>
+                {mortalityHistoryMessage ? <p className="mt-3 text-sm font-semibold text-[#0f7963]">{mortalityHistoryMessage}</p> : null}
+                <div className="mt-4 grid gap-3">
+                  {mortalityLogs.map((log) => {
+                    const draft = mortalityDrafts[log.id] ?? { tanggal: log.tanggal, jumlah_kematian: String(log.jumlah_kematian) };
+                    return (
+                      <div key={log.id} className="rounded-2xl border border-emerald-950/5 bg-white p-4">
+                        <div className="grid gap-3 lg:grid-cols-[1fr_160px_150px_auto] lg:items-end">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{formatKandangRecord(log as unknown as ApiRecord, user)} - {log.nama_periode ?? "-"}</p>
+                            <p className="mt-1 text-xs text-slate-500">Dicatat oleh {log.creator_name ?? "-"} pada {log.created_at ?? "-"}</p>
+                          </div>
+                          <label className="block">
+                            <span className="mb-2 block text-xs font-semibold text-slate-500">Tanggal</span>
+                            <input
+                              type="date"
+                              value={draft.tanggal}
+                              disabled={!log.can_edit}
+                              onChange={(event) => setMortalityDrafts((current) => ({ ...current, [log.id]: { ...draft, tanggal: event.target.value } }))}
+                              className="field-input py-2.5"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="mb-2 block text-xs font-semibold text-slate-500">Jumlah Mati</span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={draft.jumlah_kematian}
+                              disabled={!log.can_edit}
+                              onChange={(event) => setMortalityDrafts((current) => ({ ...current, [log.id]: { ...draft, jumlah_kematian: event.target.value } }))}
+                              className="field-input py-2.5"
+                            />
+                          </label>
+                          <div className="flex gap-2">
+                            <button type="button" disabled={!log.can_edit} onClick={() => void updateMortalityLog(log)} className="rounded-2xl bg-[#0f7963] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d6f5d] disabled:opacity-50">
+                              Koreksi
+                            </button>
+                            <button type="button" disabled={!log.can_edit} onClick={() => void deleteMortalityLog(log)} className="rounded-2xl bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50">
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {!mortalityLogs.length ? <p className="rounded-2xl border border-dashed border-emerald-950/10 bg-white px-4 py-8 text-sm text-slate-500">Belum ada catatan kematian.</p> : null}
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -1160,6 +1261,23 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
 
   const isProduction = section === "produksi";
   const fillNextProductionWeight = (value: string) => {
+    const productionBatch = parseProductionBatchQr(value);
+
+    if (productionBatch) {
+      setValues((current) => {
+        const next = { ...current };
+        if (productionBatch.id_kandang) {
+          next.id_kandang = productionBatch.id_kandang;
+        }
+        productionWeightFields.forEach((field, index) => {
+          next[field.name] = productionBatch.weights[index] ?? "";
+        });
+        return next;
+      });
+      setMessage(`Batch ${productionBatch.batch || "-"} dimuat dari QR.`);
+      return;
+    }
+
     setValues((current) => {
       const target = productionWeightFields.find((field) => !current[field.name]);
       if (!target) return current;
@@ -1330,6 +1448,24 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
       </form>
     </div>
   );
+}
+
+function parseProductionBatchQr(value: string): { batch: string; id_kandang: string; weights: string[] } | null {
+  try {
+    const data = JSON.parse(value) as { type?: string; batch?: string; id_kandang?: string | number; weights?: Array<string | number> };
+
+    if (data.type !== "mawifarm_production_weights" || !Array.isArray(data.weights)) {
+      return null;
+    }
+
+    return {
+      batch: String(data.batch ?? ""),
+      id_kandang: data.id_kandang ? String(data.id_kandang) : "",
+      weights: data.weights.map((weight) => String(weight).replace(",", ".")),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function CellValue({ value, className = "" }: { value: string; className?: string }) {

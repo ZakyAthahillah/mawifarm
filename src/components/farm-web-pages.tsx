@@ -172,6 +172,31 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function parseSaleNoteQr(value: string): { tanggal: string; kandang: string; nota: string; weights: string[] } | null {
+  try {
+    const data = JSON.parse(value) as {
+      type?: string;
+      tanggal?: string;
+      kandang?: string;
+      nota?: string;
+      weights?: Array<string | number>;
+    };
+
+    if (data.type !== "mawifarm_sale_note" || !Array.isArray(data.weights)) {
+      return null;
+    }
+
+    return {
+      tanggal: String(data.tanggal ?? ""),
+      kandang: String(data.kandang ?? ""),
+      nota: String(data.nota ?? ""),
+      weights: data.weights.map((weight) => String(weight).replace(",", ".")),
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function apiGet<T = unknown>(url: string, token?: string | null): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
@@ -329,6 +354,8 @@ function TrendPanel({
 export function PenjualanPage() {
   const { user } = useAuth();
   const [weights, setWeights] = useState<string[]>(() => Array.from({ length: 60 }, () => ""));
+  const [saleDate, setSaleDate] = useState("");
+  const [notaNumber, setNotaNumber] = useState("");
   const [price, setPrice] = useState("");
   const [selectedKandang, setSelectedKandang] = useState("");
   const [message, setMessage] = useState("");
@@ -369,6 +396,21 @@ export function PenjualanPage() {
       if (index === -1) return current;
       return current.map((item, itemIndex) => (itemIndex === index ? value : item));
     });
+  };
+
+  const handleScan = (value: string) => {
+    const note = parseSaleNoteQr(value);
+
+    if (!note) {
+      fillNextWeight(value.replace(",", "."));
+      return;
+    }
+
+    setSaleDate(note.tanggal);
+    setSelectedKandang(note.kandang);
+    setNotaNumber(note.nota);
+    setWeights(Array.from({ length: 60 }, (_, index) => note.weights[index] ?? ""));
+    setMessage(`Nota ${note.nota || "-"} dimuat dari QR.`);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -435,6 +477,8 @@ export function PenjualanPage() {
 
       setMessage("Data penjualan berhasil dikirim.");
       form.reset();
+      setSaleDate("");
+      setNotaNumber("");
       setSelectedKandang("");
       setPrice("");
       setWeights(Array.from({ length: 60 }, () => ""));
@@ -456,7 +500,7 @@ export function PenjualanPage() {
       <form onSubmit={(event) => void submit(event)} className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Field label="Tanggal">
-            <input name="tanggal" type="date" required className="field-input" />
+            <input name="tanggal" value={saleDate} onChange={(event) => setSaleDate(event.target.value)} type="date" required className="field-input" />
           </Field>
           <Field label="Kandang">
             <select
@@ -473,7 +517,7 @@ export function PenjualanPage() {
             </select>
           </Field>
           <Field label="Nomor Nota">
-            <input name="nota" className="field-input" placeholder="Nomor nota" />
+            <input name="nota" value={notaNumber} onChange={(event) => setNotaNumber(event.target.value)} className="field-input" placeholder="Nomor nota" />
           </Field>
           <Field label="Harga per Kg">
             <input value={price} onChange={(event) => setPrice(event.target.value)} type="number" step="0.01" className="field-input" placeholder="0" />
@@ -503,7 +547,7 @@ export function PenjualanPage() {
         </div>
 
         <div className="mt-5">
-          <QrScannerPanel onScan={(value) => fillNextWeight(value.replace(",", "."))} />
+          <QrScannerPanel onScan={handleScan} />
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
