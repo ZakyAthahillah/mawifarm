@@ -348,7 +348,7 @@ function decorateKandangCells(columns: string[], row: string[], record: ApiRecor
 }
 
 function pdfCellText(value: string) {
-  return value.replace(ownerMarker, "\nowner utama: ");
+  return value.replace(ownerMarker, "\nPrimary: ");
 }
 
 async function imageToDataUrl(src: string) {
@@ -1478,7 +1478,7 @@ function CellValue({ value, className = "" }: { value: string; className?: strin
   return (
     <span className={`${className} inline-flex flex-col gap-0.5`}>
       <span>{main}</span>
-      <span className="text-xs font-medium text-slate-400">owner utama: {owner}</span>
+      <span className="text-xs font-medium text-slate-400">Primary: {owner}</span>
     </span>
   );
 }
@@ -1489,7 +1489,7 @@ function formatKandangOption(
 ) {
   const ownerName = sharedOwnerName(option as ApiRecord, user);
 
-  return ownerName ? `${option.nama_kandang} - owner utama: ${ownerName}` : option.nama_kandang;
+  return ownerName ? `${option.nama_kandang} - Primary: ${ownerName}` : option.nama_kandang;
 }
 
 function formatKandangRecord(record: ApiRecord, user?: { id?: number; role?: string } | null) {

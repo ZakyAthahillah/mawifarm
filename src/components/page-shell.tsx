@@ -27,7 +27,7 @@ function CellText({ value, className = "" }: { value: string; className?: string
   return (
     <span className={`${className} inline-flex flex-col gap-0.5`}>
       <span>{main}</span>
-      <span className="text-xs font-medium text-slate-400">owner utama: {owner}</span>
+      <span className="text-xs font-medium text-slate-400">Primary: {owner}</span>
     </span>
   );
 }

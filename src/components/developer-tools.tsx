@@ -130,7 +130,7 @@ export function KandangAccessPage() {
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-base font-semibold text-slate-900">{record.nama_kandang}</p>
-                  <p className="mt-1 text-sm text-slate-500">Owner utama: {record.primary_owner_name ?? "-"}</p>
+                  <p className="mt-1 text-sm text-slate-500">Primary: {record.primary_owner_name ?? "-"}</p>
                 </div>
                 <button disabled={loading} type="button" onClick={() => void save(record)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0f7963] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d6f5d] disabled:opacity-70">
                   <Save className="h-4 w-4" />

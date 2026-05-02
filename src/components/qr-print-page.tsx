@@ -268,13 +268,13 @@ function formatNumber(value: number, digits = 2) {
 
 function formatKandangLabel(option: KandangOption) {
   return option.primary_owner_name
-    ? `${option.nama_kandang} - owner utama: ${option.primary_owner_name}`
+    ? `${option.nama_kandang} - Primary: ${option.primary_owner_name}`
     : option.nama_kandang;
 }
 
 function formatBatchKandang(batch: QrPrintBatch) {
   const name = batch.nama_kandang ?? "-";
-  return batch.primary_owner_name ? `${name} - owner utama: ${batch.primary_owner_name}` : name;
+  return batch.primary_owner_name ? `${name} - Primary: ${batch.primary_owner_name}` : name;
 }
 
 export function QrPrintPage() {

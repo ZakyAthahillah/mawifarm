@@ -22,6 +22,8 @@ import {
 type KandangOption = {
   id_kandang: string | number;
   nama_kandang: string;
+  primary_owner_id?: string | number | null;
+  primary_owner_name?: string | null;
 };
 
 type PeriodeOption = {
@@ -72,6 +74,8 @@ type KpiResult = {
   message?: string;
   id_periode?: number;
   nama_kandang?: string;
+  primary_owner_id?: number | string | null;
+  primary_owner_name?: string | null;
   nama_periode?: string;
   periode?: {
     bulan?: number;
@@ -79,6 +83,8 @@ type KpiResult = {
     mulai?: string;
     sampai?: string;
     hari?: number;
+    mode?: string;
+    label?: string;
   };
   asumsi?: {
     butir_per_kolom?: number;
@@ -299,6 +305,12 @@ export function DashboardOverview() {
 function formatDateLabel(value: string) {
   const day = String(value ?? "").slice(8, 10);
   return day || "-";
+}
+
+function formatKpiKandangOption(option: KandangOption) {
+  return option.primary_owner_name
+    ? `${option.nama_kandang} - Primary: ${option.primary_owner_name}`
+    : option.nama_kandang;
 }
 
 function TrendPanel({
@@ -721,6 +733,10 @@ export function FcrPage() {
   const today = useMemo(() => new Date(), []);
   const [month, setMonth] = useState(String(today.getMonth() + 1));
   const [year, setYear] = useState(String(today.getFullYear()));
+  const [kpiMode, setKpiMode] = useState("month");
+  const [singleDate, setSingleDate] = useState(today.toISOString().slice(0, 10));
+  const [rangeStart, setRangeStart] = useState(today.toISOString().slice(0, 10));
+  const [rangeEnd, setRangeEnd] = useState(today.toISOString().slice(0, 10));
   const [result, setResult] = useState<KpiResult | null>(null);
   const [message, setMessage] = useState("");
 
@@ -767,8 +783,19 @@ export function FcrPage() {
     if (!ready || !selected) return;
     setMessage("");
     try {
-      const periodParam = selectedPeriod ? `&id_periode=${selectedPeriod}` : "";
-      const data = await apiGet<KpiResult>(`${getApiBase()}/fcr/periode?id_kandang=${selected}${periodParam}&bulan=${month}&tahun=${year}`, token);
+      const params = new URLSearchParams({
+        id_kandang: selected,
+        mode: kpiMode,
+        bulan: month,
+        tahun: year,
+      });
+      if (selectedPeriod) params.set("id_periode", selectedPeriod);
+      if (kpiMode === "day") params.set("tanggal", singleDate);
+      if (kpiMode === "range") {
+        params.set("tanggal_mulai", rangeStart);
+        params.set("tanggal_selesai", rangeEnd);
+      }
+      const data = await apiGet<KpiResult>(`${getApiBase()}/fcr/periode?${params.toString()}`, token);
       setResult(data);
       if (data?.status === false) {
         setMessage(data?.message || "Tidak ada data pada periode yang dipilih.");
@@ -783,9 +810,11 @@ export function FcrPage() {
 
   const ringkasan = result?.ringkasan ?? {};
   const kpi = result?.kpi ?? {};
-  const selectedKandangName = kandangOptions.find((item) => String(item.id_kandang) === selected)?.nama_kandang ?? "";
+  const selectedKandangOption = kandangOptions.find((item) => String(item.id_kandang) === selected) ?? null;
+  const selectedKandangName = result?.nama_kandang ?? selectedKandangOption?.nama_kandang ?? "";
+  const selectedKandangOwnerName = result?.primary_owner_name ?? selectedKandangOption?.primary_owner_name ?? "";
   const selectedPeriodLabel = periodeOptions.find((item) => String(item.id_periode) === selectedPeriod)?.label ?? result?.nama_periode ?? "";
-  const selectedMonthName = monthNames[Math.max(0, (Number(result?.periode?.bulan ?? month) || Number(month)) - 1)] ?? "";
+  const resultRangeLabel = result?.periode?.mulai && result?.periode?.sampai ? `${result.periode.mulai} s/d ${result.periode.sampai}` : "-";
 
   const totalPakan = ringkasan.total_pakan_kg ?? 0;
   const totalProduksi = ringkasan.total_produksi_kg ?? 0;
@@ -857,7 +886,7 @@ export function FcrPage() {
                 <option value="">Pilih kandang</option>
                 {kandangOptions.map((item) => (
                   <option key={item.id_kandang} value={item.id_kandang}>
-                    {item.nama_kandang}
+                    {formatKpiKandangOption(item)}
                   </option>
                 ))}
               </select>
@@ -872,24 +901,58 @@ export function FcrPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Bulan">
-              <select value={month} onChange={(event) => setMonth(event.target.value)} className="field-input">
-                {monthNames.map((item, index) => (
-                  <option key={item} value={String(index + 1)}>
-                    {item}
-                  </option>
-                ))}
+            <Field label="Mode KPI">
+              <select value={kpiMode} onChange={(event) => setKpiMode(event.target.value)} className="field-input">
+                <option value="day">Per 1 Hari</option>
+                <option value="range">Date to Date</option>
+                <option value="period">Per Periode</option>
+                <option value="month">Per Bulan</option>
+                <option value="year">Per Tahun</option>
               </select>
             </Field>
-            <Field label="Tahun">
-              <select value={year} onChange={(event) => setYear(event.target.value)} className="field-input">
-                {Array.from({ length: 6 }, (_, index) => String(today.getFullYear() - index)).map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            {kpiMode === "day" ? (
+              <Field label="Tanggal">
+                <input value={singleDate} onChange={(event) => setSingleDate(event.target.value)} type="date" className="field-input" />
+              </Field>
+            ) : null}
+            {kpiMode === "range" ? (
+              <>
+                <Field label="Tanggal Awal">
+                  <input value={rangeStart} onChange={(event) => setRangeStart(event.target.value)} type="date" className="field-input" />
+                </Field>
+                <Field label="Tanggal Akhir">
+                  <input value={rangeEnd} onChange={(event) => setRangeEnd(event.target.value)} type="date" className="field-input" />
+                </Field>
+              </>
+            ) : null}
+            {kpiMode === "month" ? (
+              <Field label="Bulan">
+                <select value={month} onChange={(event) => setMonth(event.target.value)} className="field-input">
+                  {monthNames.map((item, index) => (
+                    <option key={item} value={String(index + 1)}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : null}
+            {(kpiMode === "month" || kpiMode === "year") ? (
+              <Field label="Tahun">
+                <select value={year} onChange={(event) => setYear(event.target.value)} className="field-input">
+                  {Array.from({ length: 6 }, (_, index) => String(today.getFullYear() - index)).map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : null}
+            {kpiMode === "period" ? (
+              <div className="rounded-2xl bg-[#f6fbf8] px-4 py-3 text-sm text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Range Periode</p>
+                <p className="mt-1 font-semibold text-slate-900">Tanggal awal sampai sekarang/selesai</p>
+              </div>
+            ) : null}
           </div>
           <button onClick={() => void calculate()} type="button" className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#0f7963] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d]">
             <Calculator className="h-4 w-4" />
@@ -899,15 +962,18 @@ export function FcrPage() {
           <div className="mt-4 grid gap-3 text-sm text-slate-600">
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f6fbf8] px-4 py-3">
               <span>Kandang aktif</span>
-              <span className="font-semibold text-slate-900">{selectedKandangName || "-"}</span>
+              <span className="inline-flex flex-col text-right font-semibold text-slate-900">
+                <span>{selectedKandangName || "-"}</span>
+                {selectedKandangOwnerName ? <span className="text-xs font-medium text-slate-400">Primary: {selectedKandangOwnerName}</span> : null}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f6fbf8] px-4 py-3">
               <span>Periode</span>
               <span className="text-right font-semibold text-slate-900">{selectedPeriodLabel || "-"}</span>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f6fbf8] px-4 py-3">
-              <span>Bulan KPI</span>
-              <span className="font-semibold text-slate-900">{selectedMonthName ? `${selectedMonthName} ${year}` : "-"}</span>
+              <span>Range KPI</span>
+              <span className="text-right font-semibold text-slate-900">{resultRangeLabel}</span>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f6fbf8] px-4 py-3">
               <span>Total butir telur</span>
