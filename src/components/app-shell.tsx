@@ -4,6 +4,8 @@ import {
   BarChart3,
   ClipboardList,
   FileClock,
+  History,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -11,6 +13,7 @@ import {
   PanelLeftClose,
   PanelRightClose,
   Printer,
+  Settings,
   ShieldUser,
   ShoppingCart,
   Warehouse,
@@ -39,19 +42,27 @@ const navItems: NavItem[] = [
   { label: "Operasional", href: "/dashboard/operasional", icon: FileClock },
   { label: "KPI Kandang", href: "/dashboard/fcr", icon: Waves },
   { label: "Performa", href: "/dashboard/performa", icon: BarChart3 },
+  { label: "Akun", href: "/dashboard/pengaturan", icon: Settings },
+  { label: "Akses Kandang", href: "/dashboard/kandang-access", icon: KeyRound },
+  { label: "Log Aktivitas", href: "/dashboard/activity-logs", icon: History },
   { label: "Users", href: "/dashboard/users", icon: ShieldUser },
 ];
 
 function canAccessPath(role: string | undefined, pathname: string) {
+  if (role === "farm_worker") {
+    const allowedPrefixes = ["/dashboard/kandang", "/dashboard/qr-print", "/dashboard/pengaturan"];
+    return allowedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  }
+
   if (pathname === "/dashboard") {
     return true;
   }
 
   const deniedByRole: Record<string, string[]> = {
     developer: [],
-    owner: ["/dashboard/users", "/dashboard/penjualan"],
-    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr"],
-    user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional"],
+    owner: ["/dashboard/users", "/dashboard/penjualan", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/kandang-access", "/dashboard/activity-logs"],
   };
 
   const blockedPrefixes = deniedByRole[role ?? "user"] ?? deniedByRole.user;
@@ -75,7 +86,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [ownerScope, setOwnerScope] = useState("");
 
   const visibleNavItems = navItems.filter((item) => canAccessPath(user?.role, item.href));
-  const ownerOptions = useMemo(() => user?.role === "admin" ? user.owner_options ?? [] : [], [user]);
+  const canChooseOwnerScope = user?.role === "admin" || user?.role === "farm_worker";
+  const ownerOptions = useMemo(() => canChooseOwnerScope ? user?.owner_options ?? [] : [], [canChooseOwnerScope, user]);
   const displayedOwnerScope = ownerScope || (typeof window !== "undefined" ? window.localStorage.getItem(ownerScopeStorageKey) ?? "" : "") || (ownerOptions[0]?.id ? String(ownerOptions[0].id) : "");
 
   useEffect(() => {
@@ -86,25 +98,25 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (ready && !canAccessPath(user?.role, pathname) && pathname !== "/login") {
-      router.replace("/dashboard");
+      router.replace(user?.role === "farm_worker" ? "/dashboard/kandang" : "/dashboard");
     }
   }, [pathname, ready, router, user?.role]);
 
   useEffect(() => {
-    if (!ready || user?.role !== "admin" || ownerOptions.length === 0) return;
+    if (!ready || !canChooseOwnerScope || ownerOptions.length === 0) return;
 
     const stored = window.localStorage.getItem(ownerScopeStorageKey);
     const fallback = String(ownerOptions[0].id);
     const nextOwner = stored && ownerOptions.some((owner) => String(owner.id) === stored) ? stored : fallback;
 
     window.localStorage.setItem(ownerScopeStorageKey, nextOwner);
-  }, [ownerOptions, ready, user?.role]);
+  }, [canChooseOwnerScope, ownerOptions, ready]);
 
   useEffect(() => {
-    if (ready && user?.role !== "admin") {
+    if (ready && !canChooseOwnerScope) {
       window.localStorage.removeItem(ownerScopeStorageKey);
     }
-  }, [ready, user?.role]);
+  }, [canChooseOwnerScope, ready]);
 
   const handleLogout = async () => {
     try {

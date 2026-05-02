@@ -24,6 +24,10 @@ export const saleTargets: SaleTarget[] = [
     name: "Mira",
     url: "https://script.google.com/macros/s/AKfycbxJh33HeNYuaT-_uxUci799nhwTzKRT1dhn23Cd5I-Lb-tl9EWdSJQ9nz6iYakSEM2IiQ/exec",
   },
+  {
+    name: "Yusuf",
+    url: "https://script.google.com/macros/s/AKfycbxQmfNI5Z3J2gm6ZoF6d26y-9lmIA2KceUeEbiS3JKnmvP0JhO36YZ8cRo2wR8pdJqz/exec",
+  },
 ];
 
 export function resolveSaleTarget(name: string) {

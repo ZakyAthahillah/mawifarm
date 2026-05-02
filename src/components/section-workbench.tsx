@@ -7,7 +7,7 @@ import { getApiBase, getOwnerScopeHeaders, readApiError, readJsonResponse } from
 import { PageHeader, WideTablePage } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 import { QrScannerPanel } from "@/components/qr-scanner";
-import { Eye, PencilLine, Plus, Trash2 } from "lucide-react";
+import { Eye, FileText, PencilLine, Plus, Trash2 } from "lucide-react";
 
 type SectionKey = "kandang" | "produksi" | "pakan" | "operasional";
 
@@ -171,7 +171,7 @@ const sectionConfig: Record<SectionKey, SectionConfig> = {
     title: "Pakan",
     listTitle: "Pakan",
     description: "Pemakaian pakan yang tercatat.",
-    listColumns: ["Tanggal", "Kandang", "Periode", "Kg", "Aksi"],
+    listColumns: ["Tanggal", "Kandang", "Periode", "Kg", "Total Harga", "Aksi"],
     showColumns: ["Tanggal", "Kandang", "Periode", "Jumlah Kg", "Harga/Kg", "Total Harga"],
     createFields: [
       { name: "id_kandang", label: "Kandang", type: "select" },
@@ -191,6 +191,7 @@ const sectionConfig: Record<SectionKey, SectionConfig> = {
       String(record.nama_kandang ?? "-"),
       String(record.nama_periode ?? "-"),
       String(record.jumlah_kg ?? 0),
+      `Rp ${Number(record.total_harga ?? 0).toLocaleString("id-ID")}`,
       "",
     ],
     mapShowRow: (record) => [
@@ -291,6 +292,108 @@ function formatDecimal(value: unknown, digits = 1) {
   }).format(Number.isFinite(parsed) ? parsed : 0);
 }
 
+function canSeeTotalHarga(role?: string) {
+  return role === "owner" || role === "developer";
+}
+
+function visibleFinancialColumns(columns: string[], allowed: boolean) {
+  return allowed ? columns : columns.filter((column) => column.toLowerCase() !== "total harga");
+}
+
+function visibleFinancialRow(columns: string[], row: string[], allowed: boolean) {
+  return allowed ? row : row.filter((_, index) => columns[index]?.toLowerCase() !== "total harga");
+}
+
+const ownerMarker = "[[OWNER_UTAMA]]";
+
+function sharedOwnerName(record: ApiRecord, user?: { id?: number; role?: string } | null) {
+  if (user?.role === "admin" || user?.role === "developer" || user?.role === "farm_worker") {
+    return String(record.primary_owner_name ?? "").trim();
+  }
+
+  if (user?.role !== "owner") return "";
+
+  const primaryOwnerId = Number(record.primary_owner_id ?? 0);
+  const currentUserId = Number(user.id ?? 0);
+
+  if (!primaryOwnerId || !currentUserId || primaryOwnerId === currentUserId) {
+    return "";
+  }
+
+  return String(record.primary_owner_name ?? "").trim();
+}
+
+function decorateKandangCells(columns: string[], row: string[], record: ApiRecord, user?: { id?: number; role?: string } | null) {
+  const ownerName = sharedOwnerName(record, user);
+  if (!ownerName) return row;
+
+  return row.map((cell, index) => {
+    const column = columns[index]?.toLowerCase() ?? "";
+    return column.includes("kandang") ? `${cell}${ownerMarker}${ownerName}` : cell;
+  });
+}
+
+function pdfCellText(value: string) {
+  return value.replace(ownerMarker, "\nowner utama: ");
+}
+
+async function imageToDataUrl(src: string) {
+  const response = await fetch(src);
+  const blob = await response.blob();
+
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function savePdfBlob(blob: Blob, filename: string) {
+  type SaveFilePickerWindow = Window & {
+    showSaveFilePicker?: (options?: {
+      suggestedName?: string;
+      types?: Array<{
+        description: string;
+        accept: Record<string, string[]>;
+      }>;
+    }) => Promise<{
+      createWritable: () => Promise<{
+        write: (data: Blob) => Promise<void>;
+        close: () => Promise<void>;
+      }>;
+    }>;
+  };
+
+  const picker = (window as SaveFilePickerWindow).showSaveFilePicker;
+
+  if (picker) {
+    try {
+      const handle = await picker({
+        suggestedName: filename,
+        types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function apiRequest(
   url: string,
   token?: string | null,
@@ -332,6 +435,15 @@ export function SectionListView({ section }: { section: SectionKey }) {
   const [mortalityCorrectionForm, setMortalityCorrectionForm] = useState({ id_kandang: "", jumlah_koreksi: "" });
   const [mortalityCorrectionMessage, setMortalityCorrectionMessage] = useState("");
   const config = sectionConfig[section] ?? null;
+  const showTotalHarga = canSeeTotalHarga(user?.role);
+  const isFarmWorker = user?.role === "farm_worker";
+  const visibleListColumns = config ? visibleFinancialColumns(config.listColumns, showTotalHarga) : [];
+  const mapVisibleListRow = (record: ApiRecord) => {
+    if (!config) return [];
+
+    const decorated = decorateKandangCells(config.listColumns, config.mapListRow(record), record, user);
+    return visibleFinancialRow(config.listColumns, decorated, showTotalHarga);
+  };
 
   const loadRows = async (showLoading = true) => {
     if (!ready || !config) return;
@@ -393,6 +505,8 @@ export function SectionListView({ section }: { section: SectionKey }) {
     };
   }, [config, ready, token, user?.name]);
 
+  const activeKandangAction = isFarmWorker && kandangAction === "periode" ? "mati" : kandangAction;
+
   const kandangOptions = useMemo(() => {
     if (section !== "produksi") return [];
 
@@ -443,6 +557,62 @@ export function SectionListView({ section }: { section: SectionKey }) {
     } catch {
       // no-op, UI tetap sederhana
     }
+  };
+
+  const exportProductionPdf = async () => {
+    if (section !== "produksi") return;
+
+    const [{ default: jsPDF }, autoTableModule] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+    const autoTable = autoTableModule.default;
+    const columns = visibleListColumns.filter((column) => column !== "Aksi");
+    const reportRows = filteredRows.map((record) => mapVisibleListRow(record).slice(0, columns.length).map(pdfCellText));
+    const printedAt = new Intl.DateTimeFormat("id-ID", {
+      dateStyle: "full",
+      timeStyle: "short",
+    }).format(new Date());
+    const filterText = [
+      kandangFilter ? `Kandang: ${kandangFilter}` : "Kandang: Semua",
+      tanggalFilter ? `Tanggal: ${tanggalFilter}` : "Tanggal: Semua",
+    ].join(" | ");
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const logo = await imageToDataUrl("/mawi-farm-logo.png").catch(() => "");
+
+    if (logo) {
+      doc.addImage(logo, "PNG", 40, 28, 54, 54);
+    }
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(18);
+    doc.text("Laporan Produksi Mawi Farm", 110, 45);
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text(filterText, 110, 62);
+    doc.text(`Dicetak: ${printedAt} | Total data: ${reportRows.length}`, 110, 78);
+    doc.setDrawColor(15, 121, 99);
+    doc.setLineWidth(2);
+    doc.line(40, 96, 802, 96);
+
+    autoTable(doc, {
+      head: [columns],
+      body: reportRows.length ? reportRows : [["Tidak ada data produksi sesuai filter.", ...Array.from({ length: Math.max(0, columns.length - 1) }, () => "")]],
+      startY: 112,
+      theme: "grid",
+      headStyles: { fillColor: [232, 247, 239], textColor: [15, 81, 63], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      styles: { fontSize: 8, cellPadding: 5, overflow: "linebreak" },
+      margin: { left: 40, right: 40 },
+    });
+
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Mawi Farm", 40, 570);
+
+    const filename = `laporan-produksi-${new Date().toISOString().slice(0, 10)}.pdf`;
+    const blob = doc.output("blob");
+    await savePdfBlob(blob, filename);
   };
 
   const createPeriod = async (event: FormEvent<HTMLFormElement>) => {
@@ -533,13 +703,15 @@ export function SectionListView({ section }: { section: SectionKey }) {
           <h2 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{`Data ${config.title}`}</h2>
           <p className="mt-1 text-sm text-slate-700">{config.description}</p>
         </div>
-        <Link
-          href={`/dashboard/${section}/create`}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-950/10 bg-white px-4 py-3 text-sm font-semibold text-[#0f7963] shadow-sm transition hover:bg-emerald-50 sm:w-auto"
-        >
-          <Plus className="h-4 w-4" />
-          Input Data
-        </Link>
+        {!isFarmWorker ? (
+          <Link
+            href={`/dashboard/${section}/create`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-950/10 bg-white px-4 py-3 text-sm font-semibold text-[#0f7963] shadow-sm transition hover:bg-emerald-50 sm:w-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Input Data
+          </Link>
+        ) : null}
       </div>
 
       <div className="rounded-[26px] border border-white/80 bg-white px-3 py-3 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:px-5 sm:py-5">
@@ -552,15 +724,15 @@ export function SectionListView({ section }: { section: SectionKey }) {
               </div>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-600">Jenis Aksi</span>
-                <select value={kandangAction} onChange={(event) => setKandangAction(event.target.value as "periode" | "mati" | "koreksi")} className="field-input">
-                  <option value="periode">Tambah Periode</option>
+                <select value={activeKandangAction} onChange={(event) => setKandangAction(event.target.value as "periode" | "mati" | "koreksi")} className="field-input">
+                  {!isFarmWorker ? <option value="periode">Tambah Periode</option> : null}
                   <option value="mati">Catat Kematian</option>
                   <option value="koreksi">Batalkan Salah Input</option>
                 </select>
               </label>
             </div>
 
-            {kandangAction === "periode" ? (
+            {activeKandangAction === "periode" ? (
               <form onSubmit={(event) => void createPeriod(event)}>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                   <label className="block">
@@ -569,7 +741,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
                       <option value="">Pilih kandang</option>
                       {rows.map((record) => (
                         <option key={String(config.rowId(record))} value={String(config.rowId(record))}>
-                          {String(record.nama_kandang ?? "-")}
+                          {formatKandangRecord(record, user)}
                         </option>
                       ))}
                     </select>
@@ -600,7 +772,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
               </form>
             ) : null}
 
-            {kandangAction === "mati" ? (
+            {activeKandangAction === "mati" ? (
               <form onSubmit={(event) => void addMortality(event)}>
                 <div className="grid gap-3 md:grid-cols-[1fr_220px]">
                   <label className="block">
@@ -609,7 +781,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
                       <option value="">Pilih kandang</option>
                       {rows.map((record) => (
                         <option key={String(config.rowId(record))} value={String(config.rowId(record))}>
-                          {String(record.nama_kandang ?? "-")} - {String(record.nama_periode ?? "-")}
+                          {formatKandangRecord(record, user)} - {String(record.nama_periode ?? "-")}
                         </option>
                       ))}
                     </select>
@@ -628,7 +800,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
               </form>
             ) : null}
 
-            {kandangAction === "koreksi" ? (
+            {activeKandangAction === "koreksi" ? (
               <form onSubmit={(event) => void correctMortality(event)}>
                 <div className="grid gap-3 md:grid-cols-[1fr_220px]">
                   <label className="block">
@@ -637,7 +809,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
                       <option value="">Pilih kandang</option>
                       {rows.map((record) => (
                         <option key={String(config.rowId(record))} value={String(config.rowId(record))}>
-                          {String(record.nama_kandang ?? "-")} - {String(record.nama_periode ?? "-")}
+                          {formatKandangRecord(record, user)} - {String(record.nama_periode ?? "-")}
                         </option>
                       ))}
                     </select>
@@ -697,6 +869,15 @@ export function SectionListView({ section }: { section: SectionKey }) {
               >
                 Reset Filter
               </button>
+
+              <button
+                type="button"
+                onClick={() => void exportProductionPdf()}
+                className="inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#0f7963] px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d]"
+              >
+                <FileText className="h-4 w-4" />
+                Export PDF
+              </button>
             </div>
 
             <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
@@ -720,12 +901,12 @@ export function SectionListView({ section }: { section: SectionKey }) {
               {filteredRows.map((record) => (
                 <div key={String(config.rowId(record))} className="rounded-2xl border border-emerald-950/5 bg-[#fbfdfb] p-4">
                   <div className="space-y-2">
-                    {config.mapListRow(record)
-                      .slice(0, config.listColumns.length - 1)
+                    {mapVisibleListRow(record)
+                      .slice(0, visibleListColumns.length - 1)
                       .map((cell, index) => (
                         <div key={`${cell}-${index}`} className="flex items-start justify-between gap-4 text-sm">
-                          <span className="text-slate-500">{config.listColumns[index]}</span>
-                          <span className="text-right text-slate-700">{cell}</span>
+                          <span className="text-slate-500">{visibleListColumns[index]}</span>
+                          <CellValue value={cell} className="text-right text-slate-700" />
                         </div>
                       ))}
                     <div className="flex justify-end gap-2 pt-2">
@@ -737,23 +918,27 @@ export function SectionListView({ section }: { section: SectionKey }) {
                       >
                         <Eye className="h-4 w-4" />
                       </Link>
-                      <Link
-                        href={`/dashboard/${section}/create?mode=edit&id=${config.rowId(record)}`}
-                        aria-label="Edit"
-                        title="Edit"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
-                      >
-                        <PencilLine className="h-4 w-4" />
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => void deleteRecord(record)}
-                        aria-label="Hapus"
-                        title="Hapus"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {!isFarmWorker ? (
+                        <>
+                          <Link
+                            href={`/dashboard/${section}/create?mode=edit&id=${config.rowId(record)}`}
+                            aria-label="Edit"
+                            title="Edit"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
+                          >
+                            <PencilLine className="h-4 w-4" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => void deleteRecord(record)}
+                            aria-label="Hapus"
+                            title="Hapus"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -763,10 +948,10 @@ export function SectionListView({ section }: { section: SectionKey }) {
             <div className="hidden overflow-hidden rounded-2xl border border-emerald-950/5 md:block">
               <div
                 className="grid bg-emerald-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700"
-                style={{ gridTemplateColumns: `repeat(${config.listColumns.length}, minmax(120px, 1fr))` }}
+                style={{ gridTemplateColumns: `repeat(${visibleListColumns.length}, minmax(120px, 1fr))` }}
               >
-                {config.listColumns.map((column, index) => (
-                  <span key={column} className={index === config.listColumns.length - 1 ? "text-right" : ""}>
+                {visibleListColumns.map((column, index) => (
+                  <span key={column} className={index === visibleListColumns.length - 1 ? "text-right" : ""}>
                     {column}
                   </span>
                 ))}
@@ -776,14 +961,12 @@ export function SectionListView({ section }: { section: SectionKey }) {
                 <div
                   key={String(config.rowId(record))}
                   className="grid border-t border-emerald-950/5 px-4 py-4 text-sm"
-                  style={{ gridTemplateColumns: `repeat(${config.listColumns.length}, minmax(120px, 1fr))` }}
+                  style={{ gridTemplateColumns: `repeat(${visibleListColumns.length}, minmax(120px, 1fr))` }}
                 >
-                  {config.mapListRow(record)
-                    .slice(0, config.listColumns.length - 1)
+                  {mapVisibleListRow(record)
+                    .slice(0, visibleListColumns.length - 1)
                     .map((cell, index) => (
-                      <span key={`${cell}-${index}`} className="text-slate-700">
-                        {cell}
-                      </span>
+                      <CellValue key={`${cell}-${index}`} value={cell} className="text-slate-700" />
                     ))}
                   <div className="flex justify-end gap-2">
                     <Link
@@ -794,23 +977,27 @@ export function SectionListView({ section }: { section: SectionKey }) {
                     >
                       <Eye className="h-4 w-4" />
                     </Link>
-                    <Link
-                      href={`/dashboard/${section}/create?mode=edit&id=${config.rowId(record)}`}
-                      aria-label="Edit"
-                      title="Edit"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
-                    >
-                      <PencilLine className="h-4 w-4" />
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => void deleteRecord(record)}
-                      aria-label="Hapus"
-                      title="Hapus"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {!isFarmWorker ? (
+                      <>
+                        <Link
+                          href={`/dashboard/${section}/create?mode=edit&id=${config.rowId(record)}`}
+                          aria-label="Edit"
+                          title="Edit"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
+                        >
+                          <PencilLine className="h-4 w-4" />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => void deleteRecord(record)}
+                          aria-label="Hapus"
+                          title="Hapus"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -832,7 +1019,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
 
 export function SectionCreateView({ section, mode = "create", id }: { section: SectionKey; mode?: "create" | "edit"; id?: string }) {
   const { token, ready, user } = useAuth();
-  const [kandangOptions, setKandangOptions] = useState<Array<{ id_kandang: string | number; nama_kandang: string }>>([]);
+  const [kandangOptions, setKandangOptions] = useState<Array<{ id_kandang: string | number; nama_kandang: string; primary_owner_id?: string | number | null; primary_owner_name?: string | null }>>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -854,7 +1041,7 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
         if (!response.ok) {
           throw new Error("Gagal");
         }
-        const data = await readJsonResponse<Array<{ id_kandang: string | number; nama_kandang: string }> | { data?: Array<{ id_kandang: string | number; nama_kandang: string }> }>(response);
+        const data = await readJsonResponse<Array<{ id_kandang: string | number; nama_kandang: string; primary_owner_id?: string | number | null; primary_owner_name?: string | null }> | { data?: Array<{ id_kandang: string | number; nama_kandang: string; primary_owner_id?: string | number | null; primary_owner_name?: string | null }> }>(response);
         setKandangOptions(Array.isArray(data) ? data : data?.data ?? []);
       } catch {
         setKandangOptions([]);
@@ -894,6 +1081,15 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
 
     void loadCurrent();
   }, [config, id, mode, ready, token, user?.name]);
+
+  if (user?.role === "farm_worker") {
+    return (
+      <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+        <p className="text-sm font-semibold text-slate-900">Akses khusus farm worker.</p>
+        <p className="mt-1 text-sm text-slate-500">Gunakan menu Kandang untuk catat kematian atau batalkan salah input.</p>
+      </div>
+    );
+  }
 
   if (!config) {
     return (
@@ -1014,7 +1210,7 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
                     <option value="">Pilih kandang</option>
                     {kandangOptions.map((option) => (
                       <option key={option.id_kandang} value={option.id_kandang}>
-                        {option.nama_kandang}
+                        {formatKandangOption(option, user)}
                       </option>
                     ))}
                   </select>
@@ -1136,12 +1332,46 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
   );
 }
 
+function CellValue({ value, className = "" }: { value: string; className?: string }) {
+  const [main, owner] = value.split(ownerMarker);
+
+  if (!owner) {
+    return <span className={className}>{main}</span>;
+  }
+
+  return (
+    <span className={`${className} inline-flex flex-col gap-0.5`}>
+      <span>{main}</span>
+      <span className="text-xs font-medium text-slate-400">owner utama: {owner}</span>
+    </span>
+  );
+}
+
+function formatKandangOption(
+  option: { nama_kandang: string; primary_owner_id?: string | number | null; primary_owner_name?: string | null },
+  user?: { id?: number; role?: string } | null
+) {
+  const ownerName = sharedOwnerName(option as ApiRecord, user);
+
+  return ownerName ? `${option.nama_kandang} - owner utama: ${ownerName}` : option.nama_kandang;
+}
+
+function formatKandangRecord(record: ApiRecord, user?: { id?: number; role?: string } | null) {
+  return formatKandangOption({
+    nama_kandang: String(record.nama_kandang ?? "-"),
+    primary_owner_id: record.primary_owner_id,
+    primary_owner_name: record.primary_owner_name ? String(record.primary_owner_name) : null,
+  }, user);
+}
+
 export function SectionShowView({ section, id }: { section: SectionKey; id?: string }) {
   const { token, user, ready } = useAuth();
   const [rows, setRows] = useState<ApiRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const config = sectionConfig[section] ?? null;
+  const showTotalHarga = canSeeTotalHarga(user?.role);
+  const showColumns = config ? visibleFinancialColumns(config.showColumns, showTotalHarga) : [];
 
   useEffect(() => {
     if (!ready || !config) return;
@@ -1171,8 +1401,13 @@ export function SectionShowView({ section, id }: { section: SectionKey; id?: str
   }, [config, id, ready, token, user?.name]);
 
   const dataRows = useMemo(
-    () => rows.map((record) => config.mapShowRow(record)),
-    [config, rows]
+    () => rows.map((record) => {
+      if (!config) return [];
+
+      const decorated = decorateKandangCells(config.showColumns, config.mapShowRow(record), record, user);
+      return visibleFinancialRow(config.showColumns, decorated, showTotalHarga);
+    }),
+    [config, rows, showTotalHarga, user]
   );
 
   if (!config) {
@@ -1198,7 +1433,7 @@ export function SectionShowView({ section, id }: { section: SectionKey; id?: str
       <WideTablePage
         title={`Detail ${config.title}`}
         description=""
-        columns={config.showColumns}
+        columns={showColumns}
         rows={loading ? [] : dataRows}
         emptyState={error ? "Error koneksi" : "Belum ada data"}
         emptyHint={error || ""}

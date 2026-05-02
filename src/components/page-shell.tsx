@@ -15,6 +15,23 @@ type RowAction = {
   icon?: ComponentType<{ className?: string }>;
 };
 
+const ownerMarker = "[[OWNER_UTAMA]]";
+
+function CellText({ value, className = "" }: { value: string; className?: string }) {
+  const [main, owner] = value.split(ownerMarker);
+
+  if (!owner) {
+    return <span className={className}>{main}</span>;
+  }
+
+  return (
+    <span className={`${className} inline-flex flex-col gap-0.5`}>
+      <span>{main}</span>
+      <span className="text-xs font-medium text-slate-400">owner utama: {owner}</span>
+    </span>
+  );
+}
+
 export function PageHeader({
   title,
   description,
@@ -408,7 +425,7 @@ export function WideTablePage({
               <div key={row.join("-")} className="rounded-2xl border border-emerald-950/5 bg-[#fbfdfb] px-4 py-4">
                 <div className="flex flex-col gap-1 border-b border-emerald-950/10 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Detail data</p>
-                  <p className="text-sm font-semibold text-slate-900">{titleValue}</p>
+                  <CellText value={titleValue} className="text-sm font-semibold text-slate-900" />
                   {subtitleValue ? <p className="text-sm text-slate-500">{subtitleValue}</p> : null}
                 </div>
 
@@ -418,7 +435,7 @@ export function WideTablePage({
                       <div key={`${field.label}-${field.value}`} className="rounded-2xl border border-[#0f7963]/20 bg-emerald-50 px-4 py-3 shadow-[0_1px_0_rgba(15,121,99,0.03)]">
                         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0f7963]">{field.label}</p>
                         <div className="mt-2 border-t border-emerald-950/10 pt-2">
-                          <p className="break-words text-sm font-semibold text-slate-950">{field.value}</p>
+                          <CellText value={field.value} className="break-words text-sm font-semibold text-slate-950" />
                         </div>
                       </div>
                     ))}
@@ -431,7 +448,7 @@ export function WideTablePage({
                       <div key={`${field.label}-${field.value}`} className="rounded-2xl border border-emerald-950/10 bg-white px-4 py-3 shadow-[0_1px_0_rgba(15,121,99,0.03)]">
                         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{field.label}</p>
                         <div className="mt-2 border-t border-slate-100 pt-2">
-                          <p className="break-words text-sm font-semibold text-slate-900">{field.value}</p>
+                          <CellText value={field.value} className="break-words text-sm font-semibold text-slate-900" />
                         </div>
                       </div>
                     ))}

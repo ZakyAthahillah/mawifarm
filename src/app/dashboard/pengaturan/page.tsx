@@ -1,12 +1,5 @@
-import { DataTablePage } from "@/components/page-shell";
+import { SettingsPage } from "@/components/settings-page";
 
 export default function PengaturanPage() {
-  return (
-    <DataTablePage
-      title="Pengaturan"
-      description="Konfigurasi aplikasi dan preferensi sistem."
-      columns={["Item", "Nilai", "Status", "Aksi"]}
-      rows={[]}
-    />
-  );
+  return <SettingsPage />;
 }

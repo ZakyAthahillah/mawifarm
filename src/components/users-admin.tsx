@@ -41,6 +41,7 @@ const roleOptions = [
   { label: "Developer", value: "developer" },
   { label: "Admin", value: "admin" },
   { label: "Owner", value: "owner" },
+  { label: "Farm Worker", value: "farm_worker" },
   { label: "User", value: "user" },
 ];
 
@@ -140,8 +141,9 @@ export function UsersAdminPage() {
         role: form.role,
       };
 
-      payload.owner_ids = form.role === "admin" ? form.owner_ids : [];
-      payload.owner_id = form.role === "admin" ? form.owner_ids[0] ?? null : null;
+      const usesOwnerData = form.role === "admin" || form.role === "farm_worker";
+      payload.owner_ids = usesOwnerData ? form.owner_ids : [];
+      payload.owner_id = usesOwnerData ? form.owner_ids[0] ?? null : null;
 
       if (form.password.trim()) {
         payload.password = form.password.trim();
@@ -266,7 +268,7 @@ export function UsersAdminPage() {
                 ))}
               </select>
             </Field>
-            {form.role === "admin" ? (
+            {(form.role === "admin" || form.role === "farm_worker") ? (
               <Field label="Owner Data">
                 <div className="grid gap-2 rounded-2xl border border-emerald-950/10 bg-white p-3">
                   {ownerUsers.length ? ownerUsers.map((owner) => {
@@ -336,7 +338,7 @@ export function UsersAdminPage() {
                 </div>
                 <div className="mt-4 space-y-2 text-sm">
                   <Row label="Email" value={record.email} />
-                  <Row label="Owner Data" value={record.role === "admin" ? ownerNames(record) : "-"} />
+                  <Row label="Owner Data" value={record.role === "admin" || record.role === "farm_worker" ? ownerNames(record) : "-"} />
                   <Row label="Dibuat" value={record.created_at ?? "-"} />
                 </div>
                 <div className="mt-4 flex justify-end gap-2">
@@ -364,7 +366,7 @@ export function UsersAdminPage() {
                 <span>{record.email}</span>
                 <span>{record.username}</span>
                 <span className="capitalize">{record.role}</span>
-                <span>{record.role === "admin" ? ownerNames(record) : "-"}</span>
+                <span>{record.role === "admin" || record.role === "farm_worker" ? ownerNames(record) : "-"}</span>
                 <span>{record.created_at ?? "-"}</span>
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => startEdit(record)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]">

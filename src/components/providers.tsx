@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { getApiBase, getJsonHeaders, readJsonResponse } from "@/components/api";
 
 type AuthUser = {
+  id: number;
   name: string;
   username: string;
   role: string;

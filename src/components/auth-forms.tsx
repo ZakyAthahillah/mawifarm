@@ -31,7 +31,7 @@ export function LoginForm() {
       const data = (await readJsonResponse(response)) as {
         status: boolean;
         message: string;
-        data?: { name: string; username: string; role: string };
+        data?: { id: number; name: string; username: string; role: string };
         token?: { access_token: string };
       };
 
