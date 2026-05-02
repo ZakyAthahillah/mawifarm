@@ -436,7 +436,7 @@ export function DistributionNotaPage() {
         </div>
       </div>
 
-      <form onSubmit={(event) => void submit(event)} className="rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <form onSubmit={(event) => void submit(event)} className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-950">{editing ? `Edit ${editing.nomor_nota}` : "Nota Baru"}</h2>
@@ -453,12 +453,12 @@ export function DistributionNotaPage() {
         </div>
 
         <div className="mt-5 space-y-5">
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="block">
+          <div className="grid min-w-0 gap-4 md:grid-cols-3">
+            <label className="block min-w-0">
               <span className="mb-2 block text-sm font-medium text-slate-600">Tanggal</span>
               <input value={tanggal} onChange={(event) => setTanggal(event.target.value)} type="date" required className="field-input" />
             </label>
-            <label className="block">
+            <label className="block min-w-0">
               <span className="mb-2 block text-sm font-medium text-slate-600">Kandang</span>
               <select value={kandang} onChange={(event) => setKandang(event.target.value)} required className="field-input">
                 <option value="">Pilih kandang</option>
@@ -469,7 +469,7 @@ export function DistributionNotaPage() {
                 ))}
               </select>
             </label>
-            <div className="rounded-2xl bg-[#f6fbf8] px-4 py-3">
+            <div className="min-w-0 rounded-2xl bg-[#f6fbf8] px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Total Berat</p>
               <p className="mt-1 text-xl font-semibold text-slate-950">{formatNumber(totalBerat)} kg</p>
             </div>
@@ -483,12 +483,12 @@ export function DistributionNotaPage() {
               </div>
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0f7963]">1 - 50</span>
             </div>
-            <div className="mb-5">
+            <div className="mb-5 min-w-0">
               <QrScannerPanel onScan={fillNextWeight} compact />
             </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
+            <div className="grid min-w-0 grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
               {weights.map((value, index) => (
-                <label key={index} className="block">
+                <label key={index} className="block min-w-0">
                   <span className="mb-1 block text-xs font-semibold text-slate-500">Berat {index + 1}</span>
                   <input
                     value={value}

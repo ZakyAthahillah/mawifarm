@@ -1286,11 +1286,7 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
         });
         return next;
       });
-      setMessage(
-        productionBatch.mode === "single"
-          ? "Berat, tanggal, dan kandang dimuat dari QR."
-          : `Batch ${productionBatch.batch || "-"} dimuat dari QR.`
-      );
+      setMessage("QR scanned.");
       return;
     }
 

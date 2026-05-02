@@ -63,7 +63,7 @@ export function QrScannerPanel({ onScan, compact = false }: { onScan: (value: st
             if (value && value !== lastScanRef.current) {
               lastScanRef.current = value;
               onScan(value);
-              setMessage(`Scan masuk: ${value}`);
+              setMessage("QR scanned.");
               window.setTimeout(() => {
                 void stop();
               }, 150);
@@ -105,7 +105,7 @@ export function QrScannerPanel({ onScan, compact = false }: { onScan: (value: st
       if (value) {
         lastScanRef.current = value;
         onScan(value);
-        setMessage(`Scan masuk: ${value}`);
+        setMessage("QR scanned.");
       } else {
         setMessage("Gambar belum terbaca.");
       }
@@ -210,7 +210,7 @@ export function QrScannerPanel({ onScan, compact = false }: { onScan: (value: st
         </p>
       ) : null}
 
-      {message ? <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">{message}</p> : null}
+      {message ? <p className="mt-3 break-words rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">{message}</p> : null}
     </div>
   );
 }

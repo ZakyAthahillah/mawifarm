@@ -422,7 +422,7 @@ export function PenjualanPage() {
     setSelectedKandang(note.kandang);
     setNotaNumber(note.nota);
     setWeights(Array.from({ length: 60 }, (_, index) => note.weights[index] ?? ""));
-    setMessage(`Nota ${note.nota || "-"} dimuat dari QR.`);
+    setMessage("QR scanned.");
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
