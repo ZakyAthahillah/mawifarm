@@ -68,7 +68,7 @@ function canAccessPath(role: string | undefined, pathname: string) {
   const deniedByRole: Record<string, string[]> = {
     developer: [],
     owner: ["/dashboard/users", "/dashboard/penjualan", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
-    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/kandang-access", "/dashboard/activity-logs"],
     user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
   };
 
@@ -93,8 +93,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [ownerScope, setOwnerScope] = useState("");
   const [maintenanceMessage, setMaintenanceMessage] = useState(process.env.NEXT_PUBLIC_MAINTENANCE_MESSAGE?.trim() ?? "");
 
-  const visibleNavItems = navItems.filter((item) => canAccessPath(user?.role, item.href));
+  const visibleNavItems = ready && user ? navItems.filter((item) => canAccessPath(user.role, item.href)) : [];
   const canChooseOwnerScope = user?.role === "admin" || user?.role === "farm_worker";
+  const hideOwnerScopePicker = user?.role === "admin" && (
+    pathname === "/dashboard/penjualan" ||
+    pathname === "/dashboard/distribution/nota"
+  );
   const ownerOptions = useMemo(() => canChooseOwnerScope ? user?.owner_options ?? [] : [], [canChooseOwnerScope, user]);
   const displayedOwnerScope = ownerScope || (typeof window !== "undefined" ? window.localStorage.getItem(ownerScopeStorageKey) ?? "" : "") || (ownerOptions[0]?.id ? String(ownerOptions[0].id) : "");
 
@@ -329,7 +333,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <p className="truncate text-xs text-slate-500">{user?.role ?? "admin"}</p>
               </div>
 
-              {ownerOptions.length > 0 ? (
+              {ownerOptions.length > 0 && !hideOwnerScopePicker ? (
                 <select
                   value={displayedOwnerScope}
                   onChange={(event) => {

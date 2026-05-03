@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ComponentType } from "r
 import { BarcodeFormat, EncodeHintType, QRCodeWriter } from "@zxing/library";
 import { CheckCircle2, CircleAlert, Eye, Pencil, PlugZap, Printer, RefreshCcw, Save, Scissors, ToggleLeft, ToggleRight, Trash2, Usb } from "lucide-react";
 import { getApiBase, getOwnerScopeHeaders, readApiError, readJsonResponse } from "@/components/api";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import { PageHeader } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 
@@ -308,6 +309,7 @@ export function QrPrintPage() {
   const [isPrinting, setIsPrinting] = useState(false);
   const [splitFormat, setSplitFormat] = useState(true);
   const [serialSupported, setSerialSupported] = useState(true);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const printableWeights = useMemo(() => weights.map((weight) => weight.trim()).filter(Boolean), [weights]);
   const totalWeight = useMemo(() => weights.reduce((sum, value) => sum + toNumber(value), 0), [weights]);
@@ -479,7 +481,13 @@ export function QrPrintPage() {
   };
 
   const deleteBatch = async (batch: QrPrintBatch) => {
-    if (!window.confirm(`Hapus ${batch.nomor_batch}?`)) return;
+    const approved = await confirm({
+      title: "Hapus batch QR?",
+      description: `Batch ${batch.nomor_batch} akan dihapus dari daftar QR Print.`,
+      confirmLabel: "Hapus batch",
+      variant: "danger",
+    });
+    if (!approved) return;
 
     try {
       const response = await fetch(`${getApiBase()}/qr-print-batches/${batch.id}`, {
@@ -523,6 +531,7 @@ export function QrPrintPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog />
       <PageHeader
         title="QR Print"
         description="Cetak QR berat telur ke printer thermal."
@@ -738,7 +747,7 @@ export function QrPrintPage() {
         </div>
       ) : null}
 
-      <div className="rounded-[22px] border border-white/70 bg-white/85 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px]">
+      <div className="overflow-hidden rounded-[22px] border border-white/70 bg-white/85 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px]">
         <div className="grid gap-3 p-4 md:hidden">
           {rows.length > 0 ? rows.map((row) => (
             <QrBatchCard

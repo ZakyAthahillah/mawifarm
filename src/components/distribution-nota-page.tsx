@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ComponentType, type FormEvent } from "react";
-import { Eye, Pencil, PlugZap, Printer, RefreshCcw, Save, Trash2, Usb } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Eye, Pencil, PlugZap, Printer, RefreshCcw, Save, Trash2, Usb } from "lucide-react";
 import { getApiBase, getOwnerScopeHeaders, readApiError, readJsonResponse } from "@/components/api";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import { PageHeader } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 import { QrScannerPanel } from "@/components/qr-scanner";
@@ -45,6 +47,7 @@ type ApiSingleResponse = {
 const WEIGHT_COUNT = 50;
 const DEFAULT_BAUD_RATE = 9600;
 const encoder = new TextEncoder();
+const notaApplyStorageKey = "mawifarm:nota-apply";
 
 const escpos = {
   reset: [0x1b, 0x40],
@@ -184,6 +187,7 @@ function emptyWeights() {
 }
 
 export function DistributionNotaPage() {
+  const router = useRouter();
   const { ready, token, user } = useAuth();
   const [rows, setRows] = useState<DistributionNota[]>([]);
   const [tanggal, setTanggal] = useState(todayString());
@@ -196,7 +200,10 @@ export function DistributionNotaPage() {
   const [port, setPort] = useState<SerialPortLike | null>(null);
   const [baudRate, setBaudRate] = useState(String(DEFAULT_BAUD_RATE));
   const [printingId, setPrintingId] = useState<number | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
+  const isAdmin = user?.role === "admin";
+  const canApplyNota = user?.role === "admin" || user?.role === "developer";
   const serialSupported = typeof navigator !== "undefined" && Boolean((navigator as NavigatorWithSerial).serial);
   const ownerOptions = useMemo(() => user?.role === "admin" ? user.owner_options ?? [] : [], [user]);
   const kandangOptions = useMemo(() => {
@@ -359,7 +366,12 @@ export function DistributionNotaPage() {
   };
 
   const deleteRow = async (nota: DistributionNota) => {
-    const approved = window.confirm(`Hapus nota ${nota.nomor_nota}?`);
+    const approved = await confirm({
+      title: "Hapus nota?",
+      description: `Nota ${nota.nomor_nota} akan dihapus dari daftar distribution.`,
+      confirmLabel: "Hapus nota",
+      variant: "danger",
+    });
     if (!approved) return;
 
     try {
@@ -400,8 +412,88 @@ export function DistributionNotaPage() {
     }
   };
 
+  const applyNotaToPenjualan = async (nota: DistributionNota) => {
+    const approved = await confirm({
+      title: "Apply ke Penjualan?",
+      description: `Nota ${nota.nomor_nota} akan dibuka di halaman Penjualan dan mengisi form otomatis.`,
+      confirmLabel: "Apply nota",
+    });
+    if (!approved) return;
+
+    window.sessionStorage.setItem(notaApplyStorageKey, JSON.stringify({
+      tanggal: nota.tanggal,
+      kandang: nota.kandang,
+      nota: nota.nomor_nota,
+      weights: nota.weights.filter((weight) => weight > 0).map((weight) => Number(weight.toFixed(2))),
+    }));
+    router.push("/dashboard/penjualan");
+  };
+
+  const notaTable = (
+    <div className="overflow-hidden rounded-[22px] border border-white/70 bg-white/85 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px]">
+      <div className="grid gap-3 p-4 md:hidden">
+        {rows.length > 0 ? rows.map((row) => (
+          <NotaCard
+            key={row.id}
+            row={row}
+            printing={printingId === row.id}
+            onShow={isAdmin ? undefined : () => setSelected(row)}
+            onEdit={isAdmin ? undefined : () => editRow(row)}
+            onPrint={isAdmin ? undefined : () => void printNota(row)}
+            onDelete={() => void deleteRow(row)}
+            onApply={canApplyNota ? () => void applyNotaToPenjualan(row) : undefined}
+          />
+        )) : (
+          <div className="py-4 text-sm text-slate-500">Belum ada nota.</div>
+        )}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <div className="grid min-w-[920px] grid-cols-[1fr_1fr_1fr_1fr_270px] bg-[#f3fbf5] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <span>Tanggal</span>
+          <span>Kandang</span>
+          <span>No Nota</span>
+          <span>Total</span>
+          <span>Aksi</span>
+        </div>
+        {rows.length > 0 ? rows.map((row) => (
+          <div key={row.id} className="grid min-w-[920px] grid-cols-[1fr_1fr_1fr_1fr_270px] items-center border-t border-emerald-950/5 px-5 py-4 text-sm text-slate-700">
+            <span>{row.tanggal}</span>
+            <span className="font-semibold text-slate-900">{row.kandang}</span>
+            <span>{row.nomor_nota}</span>
+            <span>{formatNumber(row.total_berat)} kg</span>
+            <span className="flex flex-wrap gap-2">
+              {!isAdmin ? <IconButton title="Show" onClick={() => setSelected(row)} icon={Eye} /> : null}
+              {!isAdmin ? <IconButton title="Edit" onClick={() => editRow(row)} icon={Pencil} /> : null}
+              {!isAdmin ? <IconButton title="Print" onClick={() => void printNota(row)} icon={Printer} disabled={printingId === row.id} /> : null}
+              <IconButton title="Delete" onClick={() => void deleteRow(row)} icon={Trash2} danger />
+              {canApplyNota ? <IconButton title="Apply ke Penjualan" onClick={() => void applyNotaToPenjualan(row)} icon={CheckCircle2} /> : null}
+            </span>
+          </div>
+        )) : (
+          <div className="px-5 py-8 text-sm text-slate-500">Belum ada nota.</div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (isAdmin) {
+    return (
+      <div className="space-y-6">
+        <ConfirmDialog />
+        <PageHeader
+          title="Distribution - Nota"
+          description="Daftar nota timbang dari distribution untuk diterapkan ke input penjualan."
+        />
+
+        {message ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-[#0f7963]">{message}</p> : null}
+        {notaTable}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      <ConfirmDialog />
       <PageHeader
         title="Distribution - Nota"
         description="Buat nota timbang, cetak thermal, lalu QR-nya bisa dipakai untuk input penjualan."
@@ -534,48 +626,7 @@ export function DistributionNotaPage() {
         </div>
       ) : null}
 
-      <div className="rounded-[22px] border border-white/70 bg-white/85 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px]">
-        <div className="grid gap-3 p-4 md:hidden">
-          {rows.length > 0 ? rows.map((row) => (
-            <NotaCard
-              key={row.id}
-              row={row}
-              printing={printingId === row.id}
-              onShow={() => setSelected(row)}
-              onEdit={() => editRow(row)}
-              onPrint={() => void printNota(row)}
-              onDelete={() => void deleteRow(row)}
-            />
-          )) : (
-            <div className="py-4 text-sm text-slate-500">Belum ada nota.</div>
-          )}
-        </div>
-        <div className="hidden overflow-x-auto md:block">
-        <div className="grid min-w-[860px] grid-cols-[1fr_1fr_1fr_1fr_220px] bg-[#f3fbf5] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-          <span>Tanggal</span>
-          <span>Kandang</span>
-          <span>No Nota</span>
-          <span>Total</span>
-          <span>Aksi</span>
-        </div>
-          {rows.length > 0 ? rows.map((row) => (
-            <div key={row.id} className="grid min-w-[860px] grid-cols-[1fr_1fr_1fr_1fr_220px] items-center border-t border-emerald-950/5 px-5 py-4 text-sm text-slate-700">
-              <span>{row.tanggal}</span>
-              <span className="font-semibold text-slate-900">{row.kandang}</span>
-              <span>{row.nomor_nota}</span>
-              <span>{formatNumber(row.total_berat)} kg</span>
-              <span className="flex flex-wrap gap-2">
-                <IconButton title="Show" onClick={() => setSelected(row)} icon={Eye} />
-                <IconButton title="Edit" onClick={() => editRow(row)} icon={Pencil} />
-                <IconButton title="Print" onClick={() => void printNota(row)} icon={Printer} disabled={printingId === row.id} />
-                <IconButton title="Delete" onClick={() => void deleteRow(row)} icon={Trash2} danger />
-              </span>
-            </div>
-          )) : (
-            <div className="px-5 py-8 text-sm text-slate-500">Belum ada nota.</div>
-          )}
-        </div>
-      </div>
+      {notaTable}
     </div>
   );
 }
@@ -616,13 +667,15 @@ function NotaCard({
   onEdit,
   onPrint,
   onDelete,
+  onApply,
 }: {
   row: DistributionNota;
   printing: boolean;
-  onShow: () => void;
-  onEdit: () => void;
-  onPrint: () => void;
+  onShow?: () => void;
+  onEdit?: () => void;
+  onPrint?: () => void;
   onDelete: () => void;
+  onApply?: () => void;
 }) {
   return (
     <div className="rounded-2xl border border-emerald-950/5 bg-white p-4 text-sm shadow-sm">
@@ -637,10 +690,11 @@ function NotaCard({
       </div>
       <p className="mt-3 break-words text-sm font-semibold text-slate-800">{row.kandang}</p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <IconButton title="Show" onClick={onShow} icon={Eye} />
-        <IconButton title="Edit" onClick={onEdit} icon={Pencil} />
-        <IconButton title="Print" onClick={onPrint} icon={Printer} disabled={printing} />
+        {onShow ? <IconButton title="Show" onClick={onShow} icon={Eye} /> : null}
+        {onEdit ? <IconButton title="Edit" onClick={onEdit} icon={Pencil} /> : null}
+        {onPrint ? <IconButton title="Print" onClick={onPrint} icon={Printer} disabled={printing} /> : null}
         <IconButton title="Delete" onClick={onDelete} icon={Trash2} danger />
+        {onApply ? <IconButton title="Apply ke Penjualan" onClick={onApply} icon={CheckCircle2} /> : null}
       </div>
     </div>
   );

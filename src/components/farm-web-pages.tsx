@@ -203,6 +203,8 @@ function parseSaleNoteQr(value: string): { tanggal: string; kandang: string; not
   }
 }
 
+const notaApplyStorageKey = "mawifarm:nota-apply";
+
 async function apiGet<T = unknown>(url: string, token?: string | null): Promise<T> {
   const response = await fetch(url, {
     credentials: "include",
@@ -343,15 +345,15 @@ function TrendPanel({
 
       <div className="mt-6 h-48 min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-3 py-4">
         <div
-          className="flex h-full min-w-full items-end gap-2"
+          className="flex h-full min-w-full items-end gap-2 sm:w-full"
           style={{ width: `max(100%, ${displayPoints.length * 34}px)` }}
         >
           {displayPoints.map((point, index) => {
             const height = maxValue > 0 ? Math.max(8, (point.value / maxValue) * 100) : 8;
 
             return (
-              <div key={`${point.label}-${index}`} className="flex w-7 shrink-0 flex-col items-center justify-end gap-2">
-                <div className="flex h-32 w-full items-end">
+              <div key={`${point.label}-${index}`} className="flex w-7 shrink-0 flex-col items-center justify-end gap-2 sm:min-w-0 sm:flex-1 sm:shrink sm:basis-0">
+                <div className="flex h-32 w-full max-w-7 items-end sm:max-w-9">
                   <div
                     className="w-full rounded-t-xl bg-[#0f7963] shadow-sm transition"
                     style={{ height: `${height}%` }}
@@ -402,6 +404,30 @@ export function PenjualanPage() {
     return options;
   }, [ownerOptions]);
   const displayedKandang = selectedKandang || selectedOwnerName;
+
+  useEffect(() => {
+    const payload = window.sessionStorage.getItem(notaApplyStorageKey);
+    if (!payload) return;
+
+    try {
+      const note = JSON.parse(payload) as {
+        tanggal?: string;
+        kandang?: string;
+        nota?: string;
+        weights?: Array<string | number>;
+      };
+
+      setSaleDate(String(note.tanggal ?? ""));
+      setSelectedKandang(String(note.kandang ?? ""));
+      setNotaNumber(String(note.nota ?? ""));
+      setWeights(Array.from({ length: 60 }, (_, index) => note.weights?.[index] !== undefined ? String(note.weights[index]).replace(",", ".") : ""));
+      setMessage(note.nota ? `Nota ${note.nota} berhasil diterapkan.` : "Nota berhasil diterapkan.");
+    } catch {
+      setMessage("Data nota tidak bisa diterapkan.");
+    } finally {
+      window.sessionStorage.removeItem(notaApplyStorageKey);
+    }
+  }, []);
 
   const updateWeight = (index: number, value: string) => {
     setWeights((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { getApiBase, getJsonHeaders, readJsonResponse } from "@/components/api";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import { PageHeader, StatCard } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 import { BadgeCheck, PencilLine, Plus, ShieldUser, Trash2, UserRound, X } from "lucide-react";
@@ -70,6 +71,7 @@ export function UsersAdminPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const isDeveloper = user?.role === "developer";
 
@@ -180,7 +182,13 @@ export function UsersAdminPage() {
 
   const remove = async (record: UserRecord) => {
     if (!isDeveloper) return;
-    if (!window.confirm(`Hapus user ${record.name}?`)) return;
+    const approved = await confirm({
+      title: "Hapus user?",
+      description: `User ${record.name} akan dihapus dari sistem.`,
+      confirmLabel: "Hapus user",
+      variant: "danger",
+    });
+    if (!approved) return;
 
     setLoading(true);
     setError("");
@@ -224,6 +232,7 @@ export function UsersAdminPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog />
       <PageHeader
         title="Users"
         description="Kelola akun, role akses, dan data login pengguna."

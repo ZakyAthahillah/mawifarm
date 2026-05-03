@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getApiBase, getOwnerScopeHeaders, readApiError, readJsonResponse } from "@/components/api";
+import { useConfirmDialog } from "@/components/confirm-dialog";
 import { PageHeader, WideTablePage } from "@/components/page-shell";
 import { useAuth } from "@/components/providers";
 import { QrScannerPanel } from "@/components/qr-scanner";
@@ -449,6 +450,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
   const [mortalityLogs, setMortalityLogs] = useState<MortalityLog[]>([]);
   const [mortalityDrafts, setMortalityDrafts] = useState<Record<number, { tanggal: string; jumlah_kematian: string }>>({});
   const [mortalityHistoryMessage, setMortalityHistoryMessage] = useState("");
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const config = sectionConfig[section] ?? null;
   const showTotalHarga = canSeeTotalHarga(user?.role);
   const isFarmWorker = user?.role === "farm_worker";
@@ -592,7 +594,13 @@ export function SectionListView({ section }: { section: SectionKey }) {
     if (!ready || !config) return;
     const id = config.rowId(record);
 
-    if (!window.confirm("Hapus data ini?")) return;
+    const approved = await confirm({
+      title: "Hapus data?",
+      description: "Data ini akan dihapus permanen dari tabel.",
+      confirmLabel: "Hapus data",
+      variant: "danger",
+    });
+    if (!approved) return;
 
     try {
       await apiRequest(config.deleteUrl(), token, {
@@ -745,7 +753,13 @@ export function SectionListView({ section }: { section: SectionKey }) {
   };
 
   const deleteMortalityLog = async (log: MortalityLog) => {
-    if (!window.confirm("Hapus catatan kematian ini?")) return;
+    const approved = await confirm({
+      title: "Hapus catatan kematian?",
+      description: "Catatan kematian ini akan dihapus dari riwayat kandang.",
+      confirmLabel: "Hapus catatan",
+      variant: "danger",
+    });
+    if (!approved) return;
 
     setMortalityHistoryMessage("");
     try {
@@ -767,6 +781,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog />
       <div className="flex flex-col gap-3 rounded-[22px] border border-white/85 bg-white/95 px-4 py-4 shadow-[0_14px_34px_rgba(7,46,40,0.12)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="min-w-0">
           <h2 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{`Data ${config.title}`}</h2>
