@@ -18,10 +18,14 @@
 
 html {
   height: 100%;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
   margin: 0;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -53,13 +57,15 @@ a {
 }
 
 button,
-input {
-  font: inherit;
-}
-
+input,
 select,
 textarea {
   font: inherit;
+  max-width: 100%;
+}
+
+button {
+  max-width: 100%;
 }
 
 .glass-panel {
@@ -73,13 +79,17 @@ textarea {
 }
 
 .field-input {
+  display: block;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  min-height: 2.75rem;
   border-radius: 1rem;
   border: 1px solid rgba(15, 47, 40, 0.12);
   background: #ffffff;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
+  line-height: 1.25rem;
   color: #0f172a;
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -92,6 +102,48 @@ textarea {
 
 .field-input::placeholder {
   color: #94a3b8;
+}
+
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-inline-size: 0;
+}
+
+input[type="date"].field-input {
+  padding-right: 0.75rem;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-height: 1.25rem;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-left: 0;
+}
+
+@media (max-width: 430px) {
+  input[type="date"] {
+    font-size: 0.8125rem;
+    padding-left: 0.75rem;
+    padding-right: 0.5rem;
+  }
+
+  .field-input {
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+  }
+
+  input[type="date"].field-input {
+    font-size: 0.8125rem;
+    padding-left: 0.75rem;
+    padding-right: 0.5rem;
+  }
 }
 
 @media print {

@@ -5,9 +5,9 @@
 ▲ Next.js 16.2.4 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.11.7:3000
-✓ Ready in 436ms
+✓ Ready in 439ms
 Creating turbopack project {
-  dir: 'C:\\Users\\zaky1\\OneDrive\\Desktop\\MawiFarmAPI\\MawiFarmJS',
+  dir: 'C:\\Users\\zaky1\\Desktop\\MawiFarmAPI\\MawiFarmJS',
   testMode: true
 }
 

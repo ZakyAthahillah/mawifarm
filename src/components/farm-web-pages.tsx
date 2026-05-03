@@ -330,26 +330,26 @@ function TrendPanel({
   const displayPoints = points.length > 0 ? points : Array.from({ length: 6 }, (_, index) => ({ label: String(index + 1), value: 0 }));
 
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-base font-semibold text-slate-950">{title}</h3>
-          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+    <div className="min-w-0 overflow-hidden rounded-[26px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h3 className="break-words text-base font-semibold text-slate-950">{title}</h3>
+          <p className="mt-1 break-words text-sm text-slate-500">{subtitle}</p>
         </div>
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-[#0f7963]">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-[#0f7963]">
           <Icon className="h-5 w-5" />
         </div>
       </div>
 
-      <div className="mt-6 flex h-48 items-end gap-2 overflow-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-3 py-4">
+      <div className="mt-6 flex h-48 min-w-0 items-end gap-1 overflow-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-2 py-4 sm:gap-2 sm:px-3">
         {displayPoints.map((point, index) => {
           const height = maxValue > 0 ? Math.max(8, (point.value / maxValue) * 100) : 8;
 
           return (
             <div key={`${point.label}-${index}`} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
-              <div className="flex h-32 w-full max-w-9 items-end">
+              <div className="flex h-32 w-full min-w-0 max-w-9 items-end">
                 <div
-                  className="w-full rounded-t-xl bg-[#0f7963] shadow-sm transition"
+                  className="w-full min-w-[2px] rounded-t-xl bg-[#0f7963] shadow-sm transition"
                   style={{ height: `${height}%` }}
                   title={`${formatNumber(point.value, 2)} ${unit}`}
                 />

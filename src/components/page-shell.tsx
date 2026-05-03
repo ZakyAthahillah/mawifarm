@@ -121,14 +121,14 @@ export function StatCard({
   };
 
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+    <div className="min-w-0 overflow-hidden rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
-          <p className="mt-2 text-sm font-medium text-[#0f7963]">{delta}</p>
+          <p className="mt-2 break-words text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{value}</p>
+          <p className="mt-2 break-words text-sm font-medium text-[#0f7963]">{delta}</p>
         </div>
-        <div className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${tones[tone]} text-white shadow-lg`}>
+        <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${tones[tone]} text-white shadow-lg`}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
