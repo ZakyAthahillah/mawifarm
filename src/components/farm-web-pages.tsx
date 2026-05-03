@@ -341,23 +341,28 @@ function TrendPanel({
         </div>
       </div>
 
-      <div className="mt-6 flex h-48 min-w-0 items-end gap-1 overflow-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-2 py-4 sm:gap-2 sm:px-3">
-        {displayPoints.map((point, index) => {
-          const height = maxValue > 0 ? Math.max(8, (point.value / maxValue) * 100) : 8;
+      <div className="mt-6 h-48 min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-3 py-4">
+        <div
+          className="flex h-full min-w-full items-end gap-2"
+          style={{ width: `max(100%, ${displayPoints.length * 34}px)` }}
+        >
+          {displayPoints.map((point, index) => {
+            const height = maxValue > 0 ? Math.max(8, (point.value / maxValue) * 100) : 8;
 
-          return (
-            <div key={`${point.label}-${index}`} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
-              <div className="flex h-32 w-full min-w-0 max-w-9 items-end">
-                <div
-                  className="w-full min-w-[2px] rounded-t-xl bg-[#0f7963] shadow-sm transition"
-                  style={{ height: `${height}%` }}
-                  title={`${formatNumber(point.value, 2)} ${unit}`}
-                />
+            return (
+              <div key={`${point.label}-${index}`} className="flex w-7 shrink-0 flex-col items-center justify-end gap-2">
+                <div className="flex h-32 w-full items-end">
+                  <div
+                    className="w-full rounded-t-xl bg-[#0f7963] shadow-sm transition"
+                    style={{ height: `${height}%` }}
+                    title={`${formatNumber(point.value, 2)} ${unit}`}
+                  />
+                </div>
+                <span className="w-full text-center text-[11px] font-medium text-slate-500">{point.label}</span>
               </div>
-              <span className="w-full truncate text-center text-[11px] font-medium text-slate-500">{point.label}</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

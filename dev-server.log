@@ -11,3 +11,11 @@ Creating turbopack project {
   testMode: true
 }
 
+ GET / 307 in 561ms (next.js: 259ms, application-code: 302ms)
+ GET /login 200 in 125ms (next.js: 28ms, application-code: 97ms)
+ GET /dashboard 200 in 94ms (next.js: 55ms, application-code: 40ms)
+ GET /login 200 in 56ms (next.js: 3ms, application-code: 53ms)
+ GET /login 200 in 30ms (next.js: 4ms, application-code: 27ms)
+ GET /dashboard 200 in 29ms (next.js: 3ms, application-code: 26ms)
+✓ Compiled in 105ms
+ GET /dashboard 200 in 77ms (next.js: 43ms, application-code: 34ms)
