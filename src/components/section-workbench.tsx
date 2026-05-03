@@ -1259,7 +1259,7 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
       });
 
       if (!response.ok) {
-        throw new Error("Gagal menyimpan");
+        throw new Error(await readApiError(response));
       }
 
       const data = await readJsonResponse<{ message?: string }>(response).catch(() => ({ message: "" }));
