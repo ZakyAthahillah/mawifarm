@@ -177,13 +177,13 @@ export function QrScannerPanel({ onScan, compact = false }: { onScan: (value: st
       />
 
       <div className={active ? "mt-4 overflow-hidden rounded-2xl border border-emerald-950/10 bg-black" : "mt-4 hidden"}>
-        <div className="relative aspect-video w-full overflow-hidden">
+        <div className={compact ? "relative h-[340px] w-full overflow-hidden sm:h-auto sm:aspect-video" : "relative h-[420px] w-full overflow-hidden sm:h-auto sm:aspect-video"}>
           <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
 
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),rgba(255,255,255,0.04))]" />
 
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <div className="relative h-[62%] w-[62%] min-w-[180px] min-h-[180px] max-w-[320px] max-h-[320px] rounded-3xl border-2 border-white/90 shadow-[0_0_0_9999px_rgba(8,15,13,0.18)]">
+            <div className="relative h-[62%] w-[76%] min-h-[220px] min-w-[220px] max-h-[340px] max-w-[340px] translate-y-[7%] rounded-3xl border-2 border-white/90 shadow-[0_0_0_9999px_rgba(8,15,13,0.18)]">
               <span className="absolute left-0 top-0 h-8 w-8 border-l-4 border-t-4 border-[#69d85f] rounded-tl-2xl" />
               <span className="absolute right-0 top-0 h-8 w-8 border-r-4 border-t-4 border-[#69d85f] rounded-tr-2xl" />
               <span className="absolute left-0 bottom-0 h-8 w-8 border-b-4 border-l-4 border-[#69d85f] rounded-bl-2xl" />

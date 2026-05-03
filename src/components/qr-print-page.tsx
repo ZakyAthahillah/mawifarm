@@ -69,7 +69,8 @@ const escpos = {
   normalSize: [0x1d, 0x21, 0x00],
   feed5: [0x1b, 0x64, 0x05],
   feed8: [0x1b, 0x64, 0x08],
-  cut: [0x1d, 0x56, 0x41, 0x10],
+  feed9: [0x1b, 0x64, 0x09],
+  cut: [0x1d, 0x56, 0x41, 0x36],
 };
 
 function sleep(ms: number) {
@@ -126,7 +127,7 @@ function buildQrPrintPayload(dataQR: string, qrText = dataQR) {
     encoder.encode(`${dataQR} `),
     bytes(escpos.normalSize),
     encoder.encode("kg\n"),
-    bytes(escpos.feed5),
+    bytes(escpos.feed9),
     bytes(escpos.cut),
   ]);
 }
@@ -157,7 +158,7 @@ function buildProductionBatchQrPayload(batch: QrPrintBatch) {
     bytes([0x1d, 0x28, 0x6b, length % 256, Math.floor(length / 256), 0x31, 0x50, 0x30]),
     qrData,
     bytes(escpos.qrPrint),
-    bytes(escpos.feed8),
+    bytes(escpos.feed9),
     bytes(escpos.cut),
   ]);
 }
@@ -206,7 +207,7 @@ function canvasToEscposRaster(canvas: HTMLCanvasElement) {
 function buildSplitQrPrintPayload(dataQR: string, qrText = dataQR) {
   const canvas = document.createElement("canvas");
   canvas.width = 480;
-  canvas.height = 132;
+  canvas.height = 180;
   const context = canvas.getContext("2d");
 
   if (!context) {
@@ -218,10 +219,10 @@ function buildSplitQrPrintPayload(dataQR: string, qrText = dataQR) {
   context.fillStyle = "#000000";
   context.font = "700 56px Arial, sans-serif";
   context.textBaseline = "middle";
-  context.fillText(dataQR, 96, 66);
+  context.fillText(dataQR, 72, canvas.height / 2);
 
-  const qrSize = 130;
-  const qrX = canvas.width - qrSize - 2;
+  const qrSize = 176;
+  const qrX = canvas.width - qrSize - 1;
   const qrY = Math.floor((canvas.height - qrSize) / 2);
   const hints = new Map<EncodeHintType, number>();
   hints.set(EncodeHintType.MARGIN, 1);
@@ -238,7 +239,7 @@ function buildSplitQrPrintPayload(dataQR: string, qrText = dataQR) {
   return concatBytes([
     bytes(escpos.reset),
     canvasToEscposRaster(canvas),
-    bytes(escpos.feed8),
+    bytes(escpos.feed9),
     bytes(escpos.cut),
   ]);
 }
@@ -570,7 +571,7 @@ export function QrPrintPage() {
 
             <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
               <InfoTile icon={Printer} label="Mode" value="ESC/POS native QR" />
-              <InfoTile icon={Scissors} label="Cut" value="GS V A 10" />
+              <InfoTile icon={Scissors} label="Cut" value="GS V A 36" />
               <InfoTile icon={CheckCircle2} label="Antrian" value={`${printableWeights.length} data / ${formatNumber(totalWeight)} kg`} />
             </div>
 
@@ -722,7 +723,7 @@ export function QrPrintPage() {
               <CommandRow label="QR" value="Model 2, Size 8, Error M" />
               <CommandRow label="Format" value={splitFormat ? "Format 2" : "Format 1"} />
               <CommandRow label="Text" value="GS ! 11, data + spasi, GS ! 00, kg" />
-              <CommandRow label="Feed + Cut" value="1B 64 05, 1D 56 41 10" />
+              <CommandRow label="Feed + Cut" value="1B 64 09, 1D 56 41 36" />
             </div>
           </div>
         </div>
