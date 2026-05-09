@@ -288,6 +288,7 @@ export function DashboardOverview() {
             value: Number(point.total_berat ?? 0),
           }))}
           unit="kg"
+          relaxed
         />
         <TrendPanel
           title={`Trend Produksi Bulanan ${new Date().getFullYear()}`}
@@ -321,12 +322,14 @@ function TrendPanel({
   icon: Icon,
   points,
   unit,
+  relaxed = false,
 }: {
   title: string;
   subtitle: string;
   icon: ComponentType<{ className?: string }>;
   points: Array<{ label: string; value: number }>;
   unit: string;
+  relaxed?: boolean;
 }) {
   const maxValue = Math.max(...points.map((point) => point.value), 0);
   const displayPoints = points.length > 0 ? points : Array.from({ length: 6 }, (_, index) => ({ label: String(index + 1), value: 0 }));
@@ -343,13 +346,13 @@ function TrendPanel({
         </div>
       </div>
 
-      <div className="mt-6 h-48 min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-3 py-4">
+      <div className={["mt-6 h-48 min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] py-4", relaxed ? "px-8" : "px-3"].join(" ")}>
         <div
-          className="flex h-full min-w-full items-end gap-2 sm:w-full"
-          style={{ width: `max(100%, ${displayPoints.length * 52}px)` }}
+          className={["flex h-full min-w-full items-end sm:w-full", relaxed ? "gap-4" : "gap-2"].join(" ")}
+          style={{ width: `max(100%, ${displayPoints.length * (relaxed ? 62 : 52)}px)` }}
         >
           {displayPoints.map((point, index) => {
-            const height = maxValue > 0 ? Math.max(8, (point.value / maxValue) * 100) : 8;
+            const height = maxValue > 0 ? Math.min(88, Math.max(8, (point.value / maxValue) * 100)) : 8;
 
             return (
               <div key={`${point.label}-${index}`} className="flex w-12 shrink-0 flex-col items-center justify-end gap-2 sm:min-w-0 sm:flex-1 sm:shrink sm:basis-0">
