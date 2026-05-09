@@ -348,14 +348,14 @@ function TrendPanel({
 
       <div className={["mt-6 h-48 min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] py-4", relaxed ? "px-8" : "px-3"].join(" ")}>
         <div
-          className={["flex h-full min-w-full items-end sm:w-full", relaxed ? "gap-4" : "gap-2"].join(" ")}
-          style={{ width: `max(100%, ${displayPoints.length * (relaxed ? 62 : 52)}px)` }}
+          className={["flex h-full min-w-full items-end sm:w-full", relaxed ? "gap-4" : "gap-3"].join(" ")}
+          style={{ width: `max(100%, ${displayPoints.length * (relaxed ? 62 : 88)}px)` }}
         >
           {displayPoints.map((point, index) => {
             const height = maxValue > 0 ? Math.min(88, Math.max(8, (point.value / maxValue) * 100)) : 8;
 
             return (
-              <div key={`${point.label}-${index}`} className="flex w-12 shrink-0 flex-col items-center justify-end gap-2 sm:min-w-0 sm:flex-1 sm:shrink sm:basis-0">
+              <div key={`${point.label}-${index}`} className={["flex shrink-0 flex-col items-center justify-end gap-2 sm:min-w-0 sm:flex-1 sm:shrink sm:basis-0", relaxed ? "w-12" : "w-20"].join(" ")}>
                 <div className="flex h-32 w-full max-w-7 items-end sm:max-w-9">
                   <div
                     className="w-full rounded-t-xl bg-[#0f7963] shadow-sm transition"
