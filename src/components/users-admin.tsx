@@ -244,7 +244,7 @@ export function UsersAdminPage() {
         <StatCard icon={UserRound} label="Admin" value={String(stats.admin)} delta="Role admin" tone="teal" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <form onSubmit={(event) => void submit(event)} className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -352,7 +352,7 @@ export function UsersAdminPage() {
             </button>
           </div>
 
-          <div className="mt-5 space-y-3 md:hidden">
+          <div className="mt-5 space-y-3 xl:hidden">
             {users.map((record) => (
               <div key={record.id} className="rounded-2xl border border-emerald-950/5 bg-[#fbfdfb] p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -370,7 +370,7 @@ export function UsersAdminPage() {
                 </div>
                 <div className="mt-4 flex justify-end gap-2">
                   <button type="button" onClick={() => startEdit(record)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]">
-                    <PencilLine className="h-4 w-4" />
+                    <PencilLine className="h-4 w-4 text-white stroke-white" />
                   </button>
                   <button type="button" onClick={() => void remove(record)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100">
                     <Trash2 className="h-4 w-4" />
@@ -381,7 +381,7 @@ export function UsersAdminPage() {
             {!users.length ? <div className="rounded-2xl border border-dashed border-emerald-950/10 bg-white px-4 py-8 text-sm text-slate-500">Belum ada user.</div> : null}
           </div>
 
-          <div className="mt-5 hidden overflow-x-auto rounded-2xl border border-emerald-950/5 md:block">
+          <div className="mt-5 hidden overflow-x-auto rounded-2xl border border-emerald-950/5 xl:block">
             <div className="grid min-w-[1080px] grid-cols-[1.1fr_1fr_0.75fr_0.75fr_0.85fr_0.85fr_0.8fr_0.75fr] bg-[#f3fbf5] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               {["Nama", "Email", "Username", "Role", "Owner", "Ganti Password", "Dibuat", "Aksi"].map((column) => (
                 <span key={column}>{column}</span>
@@ -398,7 +398,7 @@ export function UsersAdminPage() {
                 <span>{record.created_at ?? "-"}</span>
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => startEdit(record)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]">
-                    <PencilLine className="h-4 w-4" />
+                    <PencilLine className="h-4 w-4 text-white stroke-white" />
                   </button>
                   <button type="button" onClick={() => void remove(record)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100">
                     <Trash2 className="h-4 w-4" />

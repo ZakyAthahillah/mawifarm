@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight, CircleDollarSign, Egg, Layers3, Warehouse } from "lucide-react";
+import { ArrowUpRight, ChevronRight, CircleDollarSign, Egg, Layers3, Warehouse, Wrench } from "lucide-react";
 
 type ActionLink = {
   label: string;
@@ -52,19 +52,26 @@ export function PageHeader({
         {actions.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {actions.map((action) => (
-              <Link
-                key={`${action.label}-${action.href}`}
-                href={action.href}
-                className={[
-                  "inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition",
-                  action.variant === "secondary"
-                    ? "border border-emerald-950/10 bg-white text-[#0f7963] hover:bg-emerald-50"
-                    : "bg-[#0f7963] text-white shadow-lg shadow-emerald-950/10 hover:bg-[#0d6f5d]",
-                ].join(" ")}
-              >
-                {action.label}
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
+              (() => {
+                const isEditAction = action.label.toLowerCase() === "edit";
+                const ActionIcon = isEditAction ? Wrench : ArrowUpRight;
+
+                return (
+                  <Link
+                    key={`${action.label}-${action.href}`}
+                    href={action.href}
+                    className={[
+                      "inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition",
+                      action.variant === "secondary" || isEditAction
+                        ? "border border-emerald-950/10 bg-white text-[#0f7963] hover:bg-emerald-50"
+                        : "bg-[#0f7963] text-white shadow-lg shadow-emerald-950/10 hover:bg-[#0d6f5d]",
+                    ].join(" ")}
+                  >
+                    {action.label}
+                    <ActionIcon className="h-4 w-4" />
+                  </Link>
+                );
+              })()
             ))}
           </div>
         ) : null}
@@ -426,7 +433,7 @@ export function WideTablePage({
                 <div className="flex flex-col gap-1 border-b border-emerald-950/10 pb-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Detail data</p>
                   <CellText value={titleValue} className="text-sm font-semibold text-slate-900" />
-                  {subtitleValue ? <p className="text-sm text-slate-500">{subtitleValue}</p> : null}
+                  {subtitleValue ? <CellText value={subtitleValue} className="text-sm text-slate-500" /> : null}
                 </div>
 
                 {priceFields.length > 0 ? (

@@ -644,6 +644,8 @@ function IconButton({
   danger?: boolean;
   disabled?: boolean;
 }) {
+  const isEdit = title === "Edit";
+
   return (
     <button
       type="button"
@@ -652,10 +654,14 @@ function IconButton({
       onClick={onClick}
       className={[
         "grid h-9 w-9 place-items-center rounded-xl transition disabled:opacity-60",
-        danger ? "bg-rose-50 text-rose-600 hover:bg-rose-100" : "bg-emerald-50 text-[#0f7963] hover:bg-emerald-100",
+        danger
+          ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
+          : isEdit
+            ? "bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
+            : "bg-emerald-50 text-[#0f7963] hover:bg-emerald-100",
       ].join(" ")}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={isEdit ? "h-4 w-4 text-white stroke-white" : "h-4 w-4"} />
     </button>
   );
 }

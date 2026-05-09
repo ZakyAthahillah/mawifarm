@@ -346,13 +346,13 @@ function TrendPanel({
       <div className="mt-6 h-48 min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-3 py-4">
         <div
           className="flex h-full min-w-full items-end gap-2 sm:w-full"
-          style={{ width: `max(100%, ${displayPoints.length * 34}px)` }}
+          style={{ width: `max(100%, ${displayPoints.length * 52}px)` }}
         >
           {displayPoints.map((point, index) => {
             const height = maxValue > 0 ? Math.max(8, (point.value / maxValue) * 100) : 8;
 
             return (
-              <div key={`${point.label}-${index}`} className="flex w-7 shrink-0 flex-col items-center justify-end gap-2 sm:min-w-0 sm:flex-1 sm:shrink sm:basis-0">
+              <div key={`${point.label}-${index}`} className="flex w-12 shrink-0 flex-col items-center justify-end gap-2 sm:min-w-0 sm:flex-1 sm:shrink sm:basis-0">
                 <div className="flex h-32 w-full max-w-7 items-end sm:max-w-9">
                   <div
                     className="w-full rounded-t-xl bg-[#0f7963] shadow-sm transition"
@@ -360,7 +360,10 @@ function TrendPanel({
                     title={`${formatNumber(point.value, 2)} ${unit}`}
                   />
                 </div>
-                <span className="w-full text-center text-[11px] font-medium text-slate-500">{point.label}</span>
+                <span className="w-full text-center text-[11px] font-medium leading-3 text-slate-500">
+                  <span className="block">{point.label}</span>
+                  <span className="block whitespace-nowrap">{formatNumber(point.value, 2)} {unit}</span>
+                </span>
               </div>
             );
           })}
@@ -884,16 +887,6 @@ export function FcrPage() {
       ],
     },
     {
-      title: "KPI Kesehatan & Populasi",
-      description: "Populasi hidup, kematian, dan indikator kesehatan.",
-      items: [
-        { label: "Mortality", value: kpi.mortality_pct !== null && kpi.mortality_pct !== undefined ? `${formatOptionalNumber(kpi.mortality_pct, 2)}%` : "N/A", note: `(${formatOptionalNumber(ringkasan.total_kematian ?? null, 0)} ÷ ${formatNumber(initialBirds, 0)}) × 100%` },
-        { label: "Livability", value: kpi.livability_pct !== null && kpi.livability_pct !== undefined ? `${formatOptionalNumber(kpi.livability_pct, 2)}%` : "N/A", note: `100% - ${formatOptionalNumber(kpi.mortality_pct ?? null, 2)}%` },
-        { label: "Culling Rate", value: kpi.culling_rate_pct !== null && kpi.culling_rate_pct !== undefined ? `${formatOptionalNumber(kpi.culling_rate_pct, 2)}%` : "N/A", note: "Belum ada data afkir" },
-        { label: "Uniformity", value: kpi.uniformity_pct !== null && kpi.uniformity_pct !== undefined ? `${formatOptionalNumber(kpi.uniformity_pct, 2)}%` : "N/A", note: "Belum ada data keseragaman" },
-      ],
-    },
-    {
       title: "KPI Finansial",
       description: "Pendapatan, biaya, dan titik impas.",
       items: [
@@ -901,6 +894,16 @@ export function FcrPage() {
         { label: "Revenue per Egg", value: formatOptionalCurrency(kpi.revenue_per_egg_rp ?? null), note: `Rp ${formatNumber(totalPendapatanRp, 0)} ÷ ${formatNumber(totalTelurButir, 0)} butir` },
         { label: "Profit Margin", value: kpi.profit_margin_pct !== null && kpi.profit_margin_pct !== undefined ? `${formatOptionalNumber(kpi.profit_margin_pct, 2)}%` : "N/A", note: `(${formatOptionalCurrency(profit)} ÷ ${formatOptionalCurrency(totalPendapatanRp)}) × 100%` },
         { label: "BEP", value: kpi.bep_egg_count !== null && kpi.bep_egg_count !== undefined ? `${formatOptionalNumber(kpi.bep_egg_count, 2)} butir` : "N/A", note: `Rp ${formatNumber(totalBiaya, 0)} ÷ ${formatOptionalCurrency(kpi.revenue_per_egg_rp ?? null)}` },
+      ],
+    },
+    {
+      title: "KPI Kesehatan & Populasi",
+      description: "Populasi hidup, kematian, dan indikator kesehatan.",
+      items: [
+        { label: "Mortality", value: kpi.mortality_pct !== null && kpi.mortality_pct !== undefined ? `${formatOptionalNumber(kpi.mortality_pct, 2)}%` : "N/A", note: `(${formatOptionalNumber(ringkasan.total_kematian ?? null, 0)} ÷ ${formatNumber(initialBirds, 0)}) × 100%` },
+        { label: "Livability", value: kpi.livability_pct !== null && kpi.livability_pct !== undefined ? `${formatOptionalNumber(kpi.livability_pct, 2)}%` : "N/A", note: `100% - ${formatOptionalNumber(kpi.mortality_pct ?? null, 2)}%` },
+        { label: "Culling Rate", value: kpi.culling_rate_pct !== null && kpi.culling_rate_pct !== undefined ? `${formatOptionalNumber(kpi.culling_rate_pct, 2)}%` : "N/A", note: "Belum ada data afkir" },
+        { label: "Uniformity", value: kpi.uniformity_pct !== null && kpi.uniformity_pct !== undefined ? `${formatOptionalNumber(kpi.uniformity_pct, 2)}%` : "N/A", note: "Belum ada data keseragaman" },
       ],
     },
   ];

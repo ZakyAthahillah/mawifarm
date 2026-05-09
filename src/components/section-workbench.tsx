@@ -1042,7 +1042,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
                             title="Edit"
                             className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
                           >
-                            <PencilLine className="h-4 w-4" />
+                            <PencilLine className="h-4 w-4 text-white stroke-white" />
                           </Link>
                           <button
                             type="button"
@@ -1101,7 +1101,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
                           title="Edit"
                           className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f7963] text-white hover:bg-[#0d6f5d]"
                         >
-                          <PencilLine className="h-4 w-4" />
+                          <PencilLine className="h-4 w-4 text-white stroke-white" />
                         </Link>
                         <button
                           type="button"
