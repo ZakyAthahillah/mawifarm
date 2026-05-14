@@ -1537,7 +1537,7 @@ function KandangInsightDialog({ item, onClose }: { item: KandangInsight; onClose
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <FormulaBox
               title="FCR"
-              formula={explanation.fcr?.formula ?? "total_pakan_kg / total_produksi_kg"}
+              formula={explanation.fcr?.formula ?? "Total pakan ÷ total produksi telur"}
               rows={[
                 ["Total pakan", `${formatNumber(explanation.fcr?.feed_kg ?? 0, 2)} kg`],
                 ["Total produksi", `${formatNumber(explanation.fcr?.production_kg ?? 0, 2)} kg`],
@@ -1546,7 +1546,7 @@ function KandangInsightDialog({ item, onClose }: { item: KandangInsight; onClose
             />
             <FormulaBox
               title="Tren Produksi"
-              formula={explanation.trend?.formula ?? "((produksi 7 hari terakhir - produksi 7 hari sebelumnya) / produksi 7 hari sebelumnya) x 100"}
+              formula={explanation.trend?.formula ?? "Selisih produksi dua minggu ÷ produksi minggu sebelumnya × 100"}
               rows={[
                 ["Produksi 7 hari terakhir", `${formatNumber(explanation.trend?.last_7_days_kg ?? 0, 2)} kg`],
                 ["Produksi 7 hari sebelumnya", `${formatNumber(explanation.trend?.previous_7_days_kg ?? 0, 2)} kg`],
