@@ -138,6 +138,9 @@ type FarmInsight = {
     feed_30_days_kg?: number;
     profit_30_days_rp?: number;
     fcr_30_days?: number | null;
+    analysis_start?: string;
+    analysis_end?: string;
+    analysis_days?: number;
   };
   predictions?: {
     production_daily_kg?: number;
@@ -997,6 +1000,10 @@ export function FcrPage() {
   const autoHealth = autoInsight?.health;
   const autoSummary = autoInsight?.summary;
   const autoTrend = autoPredictions?.production_trend_pct;
+  const analysisDays = autoSummary?.analysis_days ?? 30;
+  const analysisRangeLabel = autoSummary?.analysis_start && autoSummary?.analysis_end
+    ? `${autoSummary.analysis_start} s/d ${autoSummary.analysis_end}`
+    : "";
   const earlyWarning = autoInsight?.early_warning;
   const riskKandang = autoInsight?.kandang_rankings?.risk ?? [];
   const championKandang = autoInsight?.kandang_rankings?.champion ?? [];
@@ -1015,7 +1022,7 @@ export function FcrPage() {
       label: "Estimasi Pakan 7 Hari",
       value: autoPredictions?.feed_7_days_kg ? `${formatNumber(autoPredictions.feed_7_days_kg, 2)} kg` : (totalPakan > 0 ? `${formatNumber(projectedFeed7Days, 2)} kg` : "N/A"),
       note: autoPredictions?.feed_daily_kg
-        ? `Otomatis dari pemakaian 30 hari: ${formatNumber(autoPredictions.feed_daily_kg, 2)} kg/hari.`
+        ? `Otomatis dari pemakaian ${formatNumber(analysisDays, 0)} hari: ${formatNumber(autoPredictions.feed_daily_kg, 2)} kg/hari.`
         : (totalPakan > 0 ? `Rata-rata pemakaian ${formatNumber(avgFeedPerDay, 2)} kg/hari.` : "Data pakan belum cukup untuk diproyeksikan."),
     },
     {
@@ -1105,7 +1112,9 @@ export function FcrPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-slate-950">Prediksi & Saran</h3>
-            <p className="mt-1 text-sm text-slate-500">Ringkasan otomatis dari produksi, pakan, biaya, profit, FCR, dan mortalitas.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Ringkasan otomatis dari produksi, pakan, biaya, profit, FCR, dan mortalitas{analysisRangeLabel ? ` (${analysisRangeLabel})` : ""}.
+            </p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">
             <Lightbulb className="h-4 w-4" />
