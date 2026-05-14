@@ -1607,8 +1607,8 @@ export function SectionShowView({ section, id }: { section: SectionKey; id?: str
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Show Data ${config.title}`}
-        description="Detail data lengkap yang diambil langsung dari API."
+        title={`Detail Data ${config.title}`}
+        description="Informasi lengkap dari data yang dipilih."
         actions={[
           { label: "Edit", href: `/dashboard/${section}/create?mode=edit&id=${id}`, variant: "primary" },
           { label: "Kembali", href: `/dashboard/${section}`, variant: "secondary" },
