@@ -1113,7 +1113,7 @@ export function FcrPage() {
           <div>
             <h3 className="text-lg font-semibold text-slate-950">Prediksi & Saran</h3>
             <p className="mt-1 text-sm text-slate-500">
-              Ringkasan otomatis dari produksi, pakan, biaya, profit, FCR, dan mortalitas{analysisRangeLabel ? ` (${analysisRangeLabel})` : ""}.
+              Ringkasan otomatis dari produksi, pakan, biaya, profit, FCR, dan mortalitas{analysisRangeLabel ? ` (${analysisRangeLabel}, sampai kemarin)` : ""}.
             </p>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">
