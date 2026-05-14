@@ -14,12 +14,14 @@ import {
   CalendarDays,
   CircleDollarSign,
   Egg,
+  Info,
   Lightbulb,
   Package2,
   Scale,
   Search,
   TrendingUp,
   Warehouse,
+  X,
 } from "lucide-react";
 
 type KandangOption = {
@@ -190,6 +192,7 @@ type KandangInsight = {
     status?: string;
   };
   metrics?: {
+    live_birds?: number;
     production_30_days_kg?: number;
     production_7_days_kg?: number;
     production_trend_pct?: number | null;
@@ -206,6 +209,39 @@ type KandangInsight = {
   };
   root_causes?: InsightMessage[];
   suggestion?: InsightMessage;
+  explanation?: {
+    analysis_period?: {
+      start?: string | null;
+      end?: string | null;
+      days?: number;
+      note?: string;
+    };
+    fcr?: {
+      formula?: string;
+      feed_kg?: number;
+      production_kg?: number;
+      result?: number | null;
+    };
+    trend?: {
+      formula?: string;
+      last_7_days_kg?: number;
+      previous_7_days_kg?: number;
+      result_pct?: number | null;
+    };
+    score?: {
+      formula?: string;
+      start?: number;
+      penalties?: {
+        fcr?: number;
+        mortality?: number;
+        margin?: number;
+        missing_production?: number;
+        production_trend?: number;
+      };
+      result?: number;
+    };
+    reason?: string;
+  };
 };
 
 const monthNames = [
@@ -865,6 +901,7 @@ export function FcrPage() {
   const [result, setResult] = useState<KpiResult | null>(null);
   const [autoInsight, setAutoInsight] = useState<FarmInsight | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
+  const [infoKandang, setInfoKandang] = useState<KandangInsight | null>(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -1194,9 +1231,19 @@ export function FcrPage() {
                           FCR {formatOptionalNumber(item.metrics?.fcr_30_days ?? null, 3)} · Tren {item.metrics?.production_trend_pct !== null && item.metrics?.production_trend_pct !== undefined ? formatSignedPercent(item.metrics.production_trend_pct) : "N/A"}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                        Skor {formatNumber(item.health?.score ?? 0, 0)}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                          Skor {formatNumber(item.health?.score ?? 0, 0)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setInfoKandang(item)}
+                          className="grid h-8 w-8 place-items-center rounded-full bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                          aria-label={`Lihat penjelasan ${item.nama_kandang}`}
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-slate-600">{item.suggestion?.text ?? "Cek data produksi, pakan, dan kematian harian."}</p>
                   </div>
@@ -1224,9 +1271,19 @@ export function FcrPage() {
                           Produksi 7 hari {formatNumber(item.metrics?.production_7_days_kg ?? 0, 2)} kg · FCR {formatOptionalNumber(item.metrics?.fcr_30_days ?? null, 3)}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">
-                        Skor {formatNumber(item.health?.score ?? 0, 0)}
-                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">
+                          Skor {formatNumber(item.health?.score ?? 0, 0)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setInfoKandang(item)}
+                          className="grid h-8 w-8 place-items-center rounded-full bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                          aria-label={`Lihat penjelasan ${item.nama_kandang}`}
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-slate-600">{item.suggestion?.text ?? "Pakai sebagai benchmark internal."}</p>
                   </div>
@@ -1269,6 +1326,10 @@ export function FcrPage() {
           </div>
         </div>
       </div>
+
+      {infoKandang ? (
+        <KandangInsightDialog item={infoKandang} onClose={() => setInfoKandang(null)} />
+      ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[0.82fr_1fr]">
         <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
@@ -1434,6 +1495,131 @@ function SummaryCard({ icon: Icon, label, value }: { icon: ComponentType<{ class
       </div>
       <p className="mt-4 text-sm text-slate-500">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function KandangInsightDialog({ item, onClose }: { item: KandangInsight; onClose: () => void }) {
+  const explanation = item.explanation ?? {};
+  const penalties = explanation.score?.penalties ?? {};
+  const totalPenalty = Object.values(penalties).reduce((sum, value) => sum + Number(value ?? 0), 0);
+
+  return (
+    <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
+      <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[26px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
+        <div className="flex items-start gap-4 border-b border-slate-100 p-5">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-[#0f7963]">
+            <Info className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-semibold text-slate-950">Penjelasan {item.nama_kandang}</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              {explanation.analysis_period?.start ?? "-"} s/d {explanation.analysis_period?.end ?? "-"} · {formatNumber(explanation.analysis_period?.days ?? 0, 0)} hari · {item.health?.status ?? "N/A"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-50 text-slate-500 transition hover:bg-slate-100"
+            aria-label="Tutup penjelasan"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(88vh-92px)] overflow-y-auto p-5">
+          <div className="rounded-[22px] border border-emerald-950/10 bg-[#fbfdfb] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Kenapa muncul</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{explanation.reason ?? "Sistem menilai kandang dari produksi, pakan, FCR, mortalitas, margin, dan tren."}</p>
+            {explanation.analysis_period?.note ? <p className="mt-2 text-sm leading-6 text-slate-500">{explanation.analysis_period.note}</p> : null}
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <FormulaBox
+              title="FCR"
+              formula={explanation.fcr?.formula ?? "total_pakan_kg / total_produksi_kg"}
+              rows={[
+                ["Total pakan", `${formatNumber(explanation.fcr?.feed_kg ?? 0, 2)} kg`],
+                ["Total produksi", `${formatNumber(explanation.fcr?.production_kg ?? 0, 2)} kg`],
+                ["Hasil FCR", formatOptionalNumber(explanation.fcr?.result ?? null, 3)],
+              ]}
+            />
+            <FormulaBox
+              title="Tren Produksi"
+              formula={explanation.trend?.formula ?? "((produksi 7 hari terakhir - produksi 7 hari sebelumnya) / produksi 7 hari sebelumnya) x 100"}
+              rows={[
+                ["Produksi 7 hari terakhir", `${formatNumber(explanation.trend?.last_7_days_kg ?? 0, 2)} kg`],
+                ["Produksi 7 hari sebelumnya", `${formatNumber(explanation.trend?.previous_7_days_kg ?? 0, 2)} kg`],
+                ["Hasil tren", explanation.trend?.result_pct !== null && explanation.trend?.result_pct !== undefined ? formatSignedPercent(explanation.trend.result_pct) : "N/A"],
+              ]}
+            />
+          </div>
+
+          <div className="mt-4 rounded-[22px] border border-emerald-950/10 bg-[#fbfdfb] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Skor Kesehatan</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{explanation.score?.formula ?? "100 dikurangi penalti dari indikator risiko."}</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <SummaryTile label="Skor awal" value={formatNumber(explanation.score?.start ?? 100, 0)} />
+              <SummaryTile label="Total penalti" value={formatNumber(totalPenalty, 2)} />
+              <SummaryTile label="Skor akhir" value={formatNumber(explanation.score?.result ?? item.health?.score ?? 0, 0)} />
+            </div>
+            <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+              <ScorePenalty label="Penalti FCR" value={penalties.fcr} />
+              <ScorePenalty label="Penalti mortalitas" value={penalties.mortality} />
+              <ScorePenalty label="Penalti margin" value={penalties.margin} />
+              <ScorePenalty label="Penalti data produksi" value={penalties.missing_production} />
+              <ScorePenalty label="Penalti tren turun" value={penalties.production_trend} />
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <FormulaBox
+              title="Prediksi 7 Hari"
+              formula="rata-rata harian dari data valid x 7"
+              rows={[
+                ["Produksi", `${formatNumber(item.prediction?.production_7_days_kg ?? 0, 2)} kg`],
+                ["Pakan", `${formatNumber(item.prediction?.feed_7_days_kg ?? 0, 2)} kg`],
+                ["Profit", formatCurrency(item.prediction?.profit_7_days_rp ?? 0)],
+              ]}
+            />
+            <FormulaBox
+              title="Metrik Pendukung"
+              formula="dipakai untuk menimbang saran"
+              rows={[
+                ["Mortalitas 7 hari", item.metrics?.mortality_7_days_pct !== null && item.metrics?.mortality_7_days_pct !== undefined ? `${formatNumber(item.metrics.mortality_7_days_pct, 2)}%` : "N/A"],
+                ["Margin profit", item.metrics?.profit_margin_pct !== null && item.metrics?.profit_margin_pct !== undefined ? `${formatNumber(item.metrics.profit_margin_pct, 2)}%` : "N/A"],
+                ["Ayam hidup", formatNumber(item.metrics?.live_birds ?? 0, 0)],
+              ]}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FormulaBox({ title, formula, rows }: { title: string; formula: string; rows: Array<[string, string]> }) {
+  return (
+    <div className="rounded-[22px] border border-emerald-950/10 bg-[#fbfdfb] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{title}</p>
+      <p className="mt-2 rounded-2xl bg-white px-3 py-2 text-sm font-medium leading-6 text-slate-700">{formula}</p>
+      <div className="mt-3 space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-4 text-sm">
+            <span className="text-slate-500">{label}</span>
+            <span className="text-right font-semibold text-slate-950">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScorePenalty({ label, value }: { label: string; value?: number }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-white px-3 py-2">
+      <span>{label}</span>
+      <span className="font-semibold text-slate-950">-{formatNumber(value ?? 0, 2)}</span>
     </div>
   );
 }
