@@ -555,8 +555,9 @@ export function SectionListView({ section }: { section: SectionKey }) {
     return () => window.clearTimeout(timer);
   }, [ready, section, token, loadMortalityLogs]);
 
+  const supportsListFilters = section === "produksi" || section === "pakan" || section === "operasional";
   const kandangOptions = useMemo(() => {
-    if (section !== "produksi") return [];
+    if (!supportsListFilters) return [];
 
     return Array.from(
       new Set(
@@ -565,10 +566,10 @@ export function SectionListView({ section }: { section: SectionKey }) {
           .filter((value) => value.length > 0)
       )
     ).sort((a, b) => a.localeCompare(b));
-  }, [rows, section]);
+  }, [rows, supportsListFilters]);
 
   const filteredRows = useMemo(() => {
-    if (section !== "produksi") return rows;
+    if (!supportsListFilters) return rows;
 
     return rows.filter((record) => {
       const recordKandang = String(record.nama_kandang ?? "").trim();
@@ -579,7 +580,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
 
       return matchKandang && matchTanggal;
     });
-  }, [kandangFilter, tanggalFilter, rows, section]);
+  }, [kandangFilter, tanggalFilter, rows, supportsListFilters]);
 
   if (!config) {
     return (
@@ -946,7 +947,7 @@ export function SectionListView({ section }: { section: SectionKey }) {
           </div>
         ) : null}
 
-        {section === "produksi" ? (
+        {supportsListFilters ? (
           <div className="mb-4 rounded-[22px] border border-emerald-950/5 bg-[#f6fbf8] p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
               <label className="block flex-1">
@@ -986,14 +987,16 @@ export function SectionListView({ section }: { section: SectionKey }) {
                 Reset Filter
               </button>
 
-              <button
-                type="button"
-                onClick={() => void exportProductionPdf()}
-                className="inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#0f7963] px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d]"
-              >
-                <FileText className="h-4 w-4" />
-                Export PDF
-              </button>
+              {section === "produksi" ? (
+                <button
+                  type="button"
+                  onClick={() => void exportProductionPdf()}
+                  className="inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#0f7963] px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-950/10 transition hover:bg-[#0d6f5d]"
+                >
+                  <FileText className="h-4 w-4" />
+                  Export PDF
+                </button>
+              ) : null}
             </div>
 
             <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
