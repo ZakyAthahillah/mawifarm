@@ -1162,16 +1162,16 @@ export function FinancePage() {
 
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <HelpCard onHelp={() => setActiveHelp("cashIn")}>
-          <StatCard icon={CircleDollarSign} label="Pendapatan" value={formatCurrency(Number(summary.cash_in ?? 0))} delta="Dari produksi telur" tone="teal" />
+          <StatCard icon={CircleDollarSign} label="Pendapatan" value={formatCurrency(Number(summary.cash_in ?? 0))} delta="Dari produksi telur" formula="Sum total_harga produksi telur" tone="teal" />
         </HelpCard>
         <HelpCard onHelp={() => setActiveHelp("cashOut")}>
-          <StatCard icon={Package2} label="Biaya" value={formatCurrency(Number(summary.cash_out ?? 0))} delta="Pakan dan operasional" tone="amber" />
+          <StatCard icon={Package2} label="Biaya" value={formatCurrency(Number(summary.cash_out ?? 0))} delta="Pakan dan operasional" formula="Pakan + rak + gaji + lain" tone="amber" />
         </HelpCard>
         <HelpCard onHelp={() => setActiveHelp("netCash")}>
-          <StatCard icon={TrendingUp} label="Laba" value={formatCurrency(Number(summary.net_cash ?? 0))} delta={`${formatOptionalNumber(summary.profit_margin_pct ?? null, 2)}% margin`} tone="green" />
+          <StatCard icon={TrendingUp} label="Laba" value={formatCurrency(Number(summary.net_cash ?? 0))} delta={`${formatOptionalNumber(summary.profit_margin_pct ?? null, 2)}% margin`} formula="Pendapatan - biaya" tone="green" />
         </HelpCard>
         <HelpCard onHelp={() => setActiveHelp("health")}>
-          <StatCard icon={Activity} label="Health score" value={loading ? "..." : formatNumber(healthScore)} delta={health.status ?? "Belum ada data"} tone={healthScore >= 82 ? "green" : healthScore >= 60 ? "amber" : "teal"} />
+          <StatCard icon={Activity} label="Health score" value={loading ? "..." : formatNumber(healthScore)} delta={health.status ?? "Belum ada data"} formula="100 - poin risiko" tone={healthScore >= 82 ? "green" : healthScore >= 60 ? "amber" : "teal"} />
         </HelpCard>
       </div>
 
@@ -1379,6 +1379,7 @@ function CashFlowTrend({ points, loading, onHelp }: { points: FinanceTrendPoint[
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Optimasi Laba</h3>
           <p className="mt-1 text-sm leading-6 text-slate-500">Pendapatan, biaya, dan laba per hari.</p>
+          <p className="mt-1 text-xs font-medium leading-5 text-slate-500">Rumus laba harian: pendapatan harian - biaya harian.</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <HelpButton onClick={onHelp} />
@@ -1474,20 +1475,21 @@ function FinanceHealthPanel({
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <FinanceMetric label="Profit margin" value={`${formatOptionalNumber(margin, 2)}%`} />
-        <FinanceMetric label="Cost ratio" value={`${formatOptionalNumber(costRatio, 2)}%`} />
-        <FinanceMetric label="FCR" value={formatOptionalNumber(fcr, 3)} />
-        <FinanceMetric label="Produksi" value={`${formatNumber(productionKg, 2)} kg`} />
+        <FinanceMetric label="Profit margin" value={`${formatOptionalNumber(margin, 2)}%`} formula="Laba / pendapatan x 100" />
+        <FinanceMetric label="Cost ratio" value={`${formatOptionalNumber(costRatio, 2)}%`} formula="Biaya / pendapatan x 100" />
+        <FinanceMetric label="FCR" value={formatOptionalNumber(fcr, 3)} formula="Total pakan kg / total telur kg" />
+        <FinanceMetric label="Produksi" value={`${formatNumber(productionKg, 2)} kg`} formula="Total berat telur tercatat" />
       </div>
     </div>
   );
 }
 
-function FinanceMetric({ label, value }: { label: string; value: string }) {
+function FinanceMetric({ label, value, formula }: { label: string; value: string; formula?: string }) {
   return (
     <div className="min-w-0 rounded-2xl border border-emerald-950/5 bg-white px-4 py-3">
       <p className="break-words text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
       <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-900">{value}</p>
+      {formula ? <p className="mt-2 break-words text-[11px] font-medium leading-5 text-slate-500">{formula}</p> : null}
     </div>
   );
 }
@@ -1507,7 +1509,8 @@ function CostBreakdownPanel({ categories, onHelp }: { categories: FinanceCategor
           <Package2 className="h-5 w-5 text-[#0f7963]" />
         </div>
       </div>
-      <div className="mt-5 space-y-3">
+      <p className="mt-4 text-xs font-medium leading-5 text-slate-500">Rumus persentase: nilai kategori / total biaya x 100.</p>
+      <div className="mt-4 space-y-3">
         {(categories.length > 0 ? categories : [{ label: "Belum ada biaya", value: 0 }]).map((item) => {
           const percent = total > 0 ? (Number(item.value ?? 0) / total) * 100 : 0;
           return (
@@ -1553,18 +1556,18 @@ function BreakEvenPanel({
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <FinanceMetric label="Harga impas/kg" value={formatOptionalCurrency(breakEven?.price_per_kg)} />
-        <FinanceMetric label="Harga aktual/kg" value={formatOptionalCurrency(summary.avg_price_per_kg)} />
-        <FinanceMetric label="Biaya/kg telur" value={formatOptionalCurrency(summary.cost_per_kg)} />
-        <FinanceMetric label="Profit/kg telur" value={formatOptionalCurrency(summary.profit_per_kg)} />
-        <FinanceMetric label="Gap harga/kg" value={formatOptionalCurrency(breakEven?.price_gap_per_kg)} />
-        <FinanceMetric label="Gap produksi" value={`${formatOptionalNumber(breakEven?.production_gap_kg, 2)} kg`} />
+        <FinanceMetric label="Harga impas/kg" value={formatOptionalCurrency(breakEven?.price_per_kg)} formula="Total biaya / total kg telur" />
+        <FinanceMetric label="Harga aktual/kg" value={formatOptionalCurrency(summary.avg_price_per_kg)} formula="Pendapatan / total kg telur" />
+        <FinanceMetric label="Biaya/kg telur" value={formatOptionalCurrency(summary.cost_per_kg)} formula="Total biaya / total kg telur" />
+        <FinanceMetric label="Profit/kg telur" value={formatOptionalCurrency(summary.profit_per_kg)} formula="Laba / total kg telur" />
+        <FinanceMetric label="Gap harga/kg" value={formatOptionalCurrency(breakEven?.price_gap_per_kg)} formula="Harga aktual/kg - harga impas/kg" />
+        <FinanceMetric label="Gap produksi" value={`${formatOptionalNumber(breakEven?.production_gap_kg, 2)} kg`} formula="Produksi aktual - produksi impas" />
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <FinanceMetric label="Pendapatan vs lalu" value={formatOptionalSignedPercent(comparison?.cash_in_pct)} />
-        <FinanceMetric label="Biaya vs lalu" value={formatOptionalSignedPercent(comparison?.cash_out_pct)} />
-        <FinanceMetric label="Laba vs lalu" value={formatOptionalSignedPercent(comparison?.net_cash_pct)} />
+        <FinanceMetric label="Pendapatan vs lalu" value={formatOptionalSignedPercent(comparison?.cash_in_pct)} formula="(Sekarang - lalu) / nilai lalu x 100" />
+        <FinanceMetric label="Biaya vs lalu" value={formatOptionalSignedPercent(comparison?.cash_out_pct)} formula="(Sekarang - lalu) / nilai lalu x 100" />
+        <FinanceMetric label="Laba vs lalu" value={formatOptionalSignedPercent(comparison?.net_cash_pct)} formula="(Sekarang - lalu) / nilai lalu x 100" />
       </div>
       <p className="mt-2 text-xs font-medium text-slate-500">{comparisonPeriodLabel}</p>
 
@@ -1629,9 +1632,9 @@ function SafetyBufferPanel({ buffer, onHelp }: { buffer: FinanceSafetyBuffer; on
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
-        <FinanceMetric label="Produksi boleh turun" value={`${formatOptionalNumber(buffer.production_drop_pct ?? null, 1)}%`} />
-        <FinanceMetric label="Harga jual boleh turun" value={`${formatOptionalNumber(buffer.price_drop_pct ?? null, 1)}%`} />
-        <FinanceMetric label="Pakan boleh naik" value={`${formatOptionalNumber(buffer.feed_cost_increase_pct ?? null, 1)}%`} />
+        <FinanceMetric label="Produksi boleh turun" value={`${formatOptionalNumber(buffer.production_drop_pct ?? null, 1)}%`} formula="(Produksi - produksi impas) / produksi x 100" />
+        <FinanceMetric label="Harga jual boleh turun" value={`${formatOptionalNumber(buffer.price_drop_pct ?? null, 1)}%`} formula="(Harga aktual - harga impas) / harga aktual x 100" />
+        <FinanceMetric label="Pakan boleh naik" value={`${formatOptionalNumber(buffer.feed_cost_increase_pct ?? null, 1)}%`} formula="Laba / biaya pakan x 100" />
       </div>
 
       <div className="mt-4 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-4 py-3">
@@ -1645,6 +1648,9 @@ function SensitivityList({ title, rows, suffix }: { title: string; rows: Finance
   return (
     <div className="min-w-0 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] p-4">
       <p className="break-words text-sm font-semibold text-slate-950">{title}</p>
+      <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
+        {suffix === "naik" ? "Biaya baru = biaya sekarang + kenaikan pakan." : "Pendapatan baru = pendapatan sekarang x perubahan harga."}
+      </p>
       <div className="mt-3 space-y-2">
         {(rows.length > 0 ? rows : [{ change_pct: 0, net_cash: 0, margin_pct: null }]).map((row) => (
           <div key={`${title}-${row.change_pct}`} className="flex min-w-0 items-start justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm">
@@ -1674,10 +1680,10 @@ function ForecastPanel({ forecast, recommendations, actionPlan, onHelp }: { fore
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <FinanceMetric label="Laba 7 hari" value={formatCurrency(Number(forecast?.net_cash_7_days ?? 0))} />
-        <FinanceMetric label="Laba 30 hari" value={formatCurrency(Number(forecast?.net_cash_30_days ?? 0))} />
-        <FinanceMetric label="Pendapatan 30 hari" value={formatCurrency(Number(forecast?.cash_in_30_days ?? 0))} />
-        <FinanceMetric label="Biaya 30 hari" value={formatCurrency(Number(forecast?.cash_out_30_days ?? 0))} />
+        <FinanceMetric label="Laba 7 hari" value={formatCurrency(Number(forecast?.net_cash_7_days ?? 0))} formula="Rata-rata laba harian x 7" />
+        <FinanceMetric label="Laba 30 hari" value={formatCurrency(Number(forecast?.net_cash_30_days ?? 0))} formula="Rata-rata laba harian x 30" />
+        <FinanceMetric label="Pendapatan 30 hari" value={formatCurrency(Number(forecast?.cash_in_30_days ?? 0))} formula="Rata-rata pendapatan harian x 30" />
+        <FinanceMetric label="Biaya 30 hari" value={formatCurrency(Number(forecast?.cash_out_30_days ?? 0))} formula="Rata-rata biaya harian x 30" />
       </div>
 
       {actionPlan.length > 0 ? (
@@ -1725,11 +1731,11 @@ function FinanceKandangPanel({ title, row, emptyText, onHelp }: { title: string;
       {row ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <FinanceMetric label="Kandang" value={row.nama_kandang} />
-          <FinanceMetric label="Laba" value={formatCurrency(Number(row.net_cash ?? 0))} />
-          <FinanceMetric label="Margin" value={`${formatOptionalNumber(row.margin_pct ?? null, 2)}%`} />
-          <FinanceMetric label="FCR" value={formatOptionalNumber(row.fcr ?? null, 3)} />
-          <FinanceMetric label="Risk level" value={row.risk_level ?? "N/A"} />
-          <FinanceMetric label="Biaya/kg" value={formatOptionalCurrency(row.cost_per_kg ?? null)} />
+          <FinanceMetric label="Laba" value={formatCurrency(Number(row.net_cash ?? 0))} formula="Pendapatan - biaya" />
+          <FinanceMetric label="Margin" value={`${formatOptionalNumber(row.margin_pct ?? null, 2)}%`} formula="Laba / pendapatan x 100" />
+          <FinanceMetric label="FCR" value={formatOptionalNumber(row.fcr ?? null, 3)} formula="Pakan kg / telur kg" />
+          <FinanceMetric label="Risk level" value={row.risk_level ?? "N/A"} formula="Dari skor risiko kandang" />
+          <FinanceMetric label="Biaya/kg" value={formatOptionalCurrency(row.cost_per_kg ?? null)} formula="Biaya / telur kg" />
         </div>
       ) : null}
       {row?.root_causes?.length ? (

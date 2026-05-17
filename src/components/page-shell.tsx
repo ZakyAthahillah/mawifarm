@@ -112,12 +112,14 @@ export function StatCard({
   label,
   value,
   delta,
+  formula,
   tone = "green",
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
   value: string;
   delta: string;
+  formula?: string;
   tone?: "green" | "mint" | "teal" | "amber";
 }) {
   const tones = {
@@ -134,6 +136,7 @@ export function StatCard({
           <p className="text-sm text-slate-500">{label}</p>
           <p className="mt-2 break-words text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">{value}</p>
           <p className="mt-2 break-words text-sm font-medium text-[#0f7963]">{delta}</p>
+          {formula ? <p className="mt-2 break-words text-xs leading-5 text-slate-500">{formula}</p> : null}
         </div>
         <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${tones[tone]} text-white shadow-lg`}>
           <Icon className="h-5 w-5" />
