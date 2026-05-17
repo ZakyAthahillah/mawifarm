@@ -433,6 +433,25 @@ function formatOptionalSignedPercent(value: number | null | undefined) {
   return formatSignedPercent(value);
 }
 
+function formatShortDate(value: string | undefined) {
+  const [year, month, day] = String(value ?? "").split("-");
+  const monthIndex = Number(month) - 1;
+
+  if (!year || !day || monthIndex < 0 || monthIndex >= monthNames.length) {
+    return "-";
+  }
+
+  return `${Number(day)} ${monthNames[monthIndex].slice(0, 3)} ${year}`;
+}
+
+function formatComparisonPeriodLabel(period: NonNullable<FinanceData["comparison"]>["period"]) {
+  if (!period?.start || !period?.end) {
+    return "Periode pembanding belum tersedia";
+  }
+
+  return `* Lalu = ${formatShortDate(period.start)} - ${formatShortDate(period.end)}`;
+}
+
 function toNumber(value: unknown) {
   const normalized = String(value ?? "").replace(",", ".");
   const parsed = Number(normalized);
@@ -1521,6 +1540,8 @@ function BreakEvenPanel({
   benchmark: FinanceData["benchmark"];
   onHelp: () => void;
 }) {
+  const comparisonPeriodLabel = formatComparisonPeriodLabel(comparison?.period);
+
   return (
     <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
       <div className="flex items-start justify-between gap-3 sm:gap-4">
@@ -1545,6 +1566,7 @@ function BreakEvenPanel({
         <FinanceMetric label="Biaya vs lalu" value={formatOptionalSignedPercent(comparison?.cash_out_pct)} />
         <FinanceMetric label="Laba vs lalu" value={formatOptionalSignedPercent(comparison?.net_cash_pct)} />
       </div>
+      <p className="mt-2 text-xs font-medium text-slate-500">{comparisonPeriodLabel}</p>
 
       <div className="mt-5 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-4 py-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Benchmark</p>
