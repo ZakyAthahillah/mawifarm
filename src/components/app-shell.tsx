@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  CircleDollarSign,
   ClipboardList,
   FileClock,
   History,
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { label: "QR Print", href: "/dashboard/qr-print", icon: Printer },
   { label: "Pakan", href: "/dashboard/pakan", icon: Package2 },
   { label: "Operasional", href: "/dashboard/operasional", icon: FileClock },
+  { label: "Finansial", href: "/dashboard/finance", icon: CircleDollarSign },
   { label: "KPI Kandang", href: "/dashboard/fcr", icon: Waves },
   { label: "Performa", href: "/dashboard/performa", icon: BarChart3 },
   { label: "Akun", href: "/dashboard/pengaturan", icon: Settings },
@@ -69,7 +71,7 @@ function canAccessPath(role: string | undefined, pathname: string) {
     developer: [],
     owner: ["/dashboard/users", "/dashboard/penjualan", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
     admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/kandang-access", "/dashboard/activity-logs"],
-    user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/finance", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
   };
 
   const blockedPrefixes = deniedByRole[role ?? "user"] ?? deniedByRole.user;
