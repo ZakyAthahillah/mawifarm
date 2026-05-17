@@ -1107,14 +1107,14 @@ export function FinancePage() {
   const healthScore = Number(health.score ?? 0);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-5 sm:space-y-6">
       <PageHeader
         title="Finance"
         description="Optimasi laba dan keberlanjutan finansial berdasarkan produksi, pakan, dan operasional yang sudah tercatat."
       />
 
-      <div className="rounded-[26px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:p-5">
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.3fr]">
+      <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+        <div className="grid min-w-0 gap-3 md:grid-cols-[1fr_1fr_1.3fr]">
           <label className="block min-w-0">
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Mulai</span>
             <input className="field-input mt-2" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
@@ -1141,7 +1141,7 @@ export function FinancePage() {
         <div className="rounded-[26px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">{error}</div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <HelpCard onHelp={() => setActiveHelp("cashIn")}>
           <StatCard icon={CircleDollarSign} label="Pendapatan" value={formatCurrency(Number(summary.cash_in ?? 0))} delta="Dari produksi telur" tone="teal" />
         </HelpCard>
@@ -1355,7 +1355,7 @@ function CashFlowTrend({ points, loading, onHelp }: { points: FinanceTrendPoint[
   const maxValue = Math.max(...displayPoints.map((point) => Math.max(Math.abs(Number(point.cash_in ?? 0)), Math.abs(Number(point.cash_out ?? 0)), Math.abs(Number(point.net_cash ?? 0)))), 1);
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
+    <div className="min-w-0 overflow-hidden rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Optimasi Laba</h3>
@@ -1369,12 +1369,12 @@ function CashFlowTrend({ points, loading, onHelp }: { points: FinanceTrendPoint[
         </div>
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-4 py-5">
+      <div className="mt-5 min-w-0 overflow-x-auto rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-3 py-4 sm:mt-6 sm:px-4 sm:py-5">
         <div
-          className="grid min-w-full items-end gap-3"
+          className="grid min-w-full items-end gap-2 sm:gap-3"
           style={{
-            gridTemplateColumns: `repeat(${displayPoints.length}, minmax(56px, 1fr))`,
-            minWidth: `${displayPoints.length * 64}px`,
+            gridTemplateColumns: `repeat(${displayPoints.length}, minmax(48px, 1fr))`,
+            minWidth: `${displayPoints.length * 56}px`,
           }}
         >
           {displayPoints.map((point, index) => {
@@ -1388,7 +1388,7 @@ function CashFlowTrend({ points, loading, onHelp }: { points: FinanceTrendPoint[
                   <div className="w-4 rounded-t-lg bg-[#0f7963]" style={{ height: `${cashInHeight}px` }} title={`Pendapatan ${formatCurrency(Number(point.cash_in ?? 0))}`} />
                   <div className="w-4 rounded-t-lg bg-[#d8d06c]" style={{ height: `${cashOutHeight}px` }} title={`Biaya ${formatCurrency(Number(point.cash_out ?? 0))}`} />
                 </div>
-                <span className={["rounded-full px-2 py-1 text-[10px] font-semibold", netPositive ? "bg-emerald-50 text-[#0f7963]" : "bg-rose-50 text-rose-700"].join(" ")}>
+                <span className={["max-w-16 break-words rounded-full px-2 py-1 text-center text-[10px] font-semibold leading-3 sm:max-w-24", netPositive ? "bg-emerald-50 text-[#0f7963]" : "bg-rose-50 text-rose-700"].join(" ")}>
                   {formatCurrency(Number(point.net_cash ?? 0))}
                 </span>
                 <span className="text-[11px] font-medium text-slate-500">{formatDateLabel(point.tanggal)}</span>
@@ -1427,9 +1427,9 @@ function FinanceHealthPanel({
   const width = Math.max(0, Math.min(100, score));
 
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Financial Sustainability</h3>
           <p className="mt-1 text-sm text-slate-500">Skor dari laba, margin, rasio biaya, dan FCR.</p>
         </div>
@@ -1441,13 +1441,13 @@ function FinanceHealthPanel({
         </div>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] p-4">
-        <div className="flex items-end justify-between gap-3">
-          <div>
+      <div className="mt-5 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] p-4 sm:mt-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-sm text-slate-500">Health score</p>
             <p className="mt-1 text-4xl font-semibold tracking-tight text-slate-950">{formatNumber(score)}</p>
           </div>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963]">{status}</span>
+          <span className="self-start break-words rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-[#0f7963] sm:self-auto">{status}</span>
         </div>
         <div className="mt-4 h-3 overflow-hidden rounded-full bg-white">
           <div className="h-full rounded-full bg-[#0f7963]" style={{ width: `${width}%` }} />
@@ -1466,9 +1466,9 @@ function FinanceHealthPanel({
 
 function FinanceMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-emerald-950/5 bg-white px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <p className="mt-1 break-words text-sm font-semibold text-slate-900">{value}</p>
+    <div className="min-w-0 rounded-2xl border border-emerald-950/5 bg-white px-4 py-3">
+      <p className="break-words text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
+      <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-900">{value}</p>
     </div>
   );
 }
@@ -1477,9 +1477,9 @@ function CostBreakdownPanel({ categories, onHelp }: { categories: FinanceCategor
   const total = categories.reduce((sum, item) => sum + Number(item.value ?? 0), 0);
 
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Breakdown Biaya</h3>
           <p className="mt-1 text-sm text-slate-500">Porsi pengeluaran dari data pakan dan operasional.</p>
         </div>
@@ -1494,8 +1494,8 @@ function CostBreakdownPanel({ categories, onHelp }: { categories: FinanceCategor
           return (
             <div key={item.label}>
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="font-medium text-slate-700">{item.label}</span>
-                <span className="font-semibold text-slate-950">{formatCurrency(Number(item.value ?? 0))}</span>
+                <span className="min-w-0 break-words font-medium text-slate-700">{item.label}</span>
+                <span className="min-w-0 break-words text-right font-semibold text-slate-950">{formatCurrency(Number(item.value ?? 0))}</span>
               </div>
               <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-emerald-50">
                 <div className="h-full rounded-full bg-[#0f7963]" style={{ width: `${Math.max(3, percent)}%` }} />
@@ -1522,9 +1522,9 @@ function BreakEvenPanel({
   onHelp: () => void;
 }) {
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Break-even dan Efisiensi</h3>
           <p className="mt-1 text-sm text-slate-500">Titik impas dan biaya per kg telur dari data periode ini.</p>
         </div>
@@ -1563,9 +1563,9 @@ function BreakEvenPanel({
 
 function SensitivityPanel({ sensitivity, onHelp }: { sensitivity: FinanceData["sensitivity"]; onHelp: () => void }) {
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Sensitivity Check</h3>
           <p className="mt-1 text-sm text-slate-500">Dampak jika pakan naik atau harga jual turun.</p>
         </div>
@@ -1588,9 +1588,9 @@ function SafetyBufferPanel({ buffer, onHelp }: { buffer: FinanceSafetyBuffer; on
   const tone = level === "safe" ? "text-[#0f7963] bg-emerald-50 border-emerald-100" : level === "thin" ? "text-amber-800 bg-amber-50 border-amber-100" : "text-rose-800 bg-rose-50 border-rose-100";
 
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Batas Aman Sebelum Rugi</h3>
           <p className="mt-1 text-sm text-slate-500">Jarak aman produksi, harga jual, dan pakan sebelum menyentuh titik rugi.</p>
         </div>
@@ -1621,13 +1621,13 @@ function SafetyBufferPanel({ buffer, onHelp }: { buffer: FinanceSafetyBuffer; on
 
 function SensitivityList({ title, rows, suffix }: { title: string; rows: FinanceSensitivityPoint[]; suffix: string }) {
   return (
-    <div className="rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] p-4">
-      <p className="text-sm font-semibold text-slate-950">{title}</p>
+    <div className="min-w-0 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] p-4">
+      <p className="break-words text-sm font-semibold text-slate-950">{title}</p>
       <div className="mt-3 space-y-2">
         {(rows.length > 0 ? rows : [{ change_pct: 0, net_cash: 0, margin_pct: null }]).map((row) => (
-          <div key={`${title}-${row.change_pct}`} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm">
-            <span className="font-medium text-slate-600">{formatSignedPercent(row.change_pct)} {suffix}</span>
-            <span className={["text-right font-semibold", Number(row.net_cash ?? 0) >= 0 ? "text-[#0f7963]" : "text-rose-700"].join(" ")}>
+          <div key={`${title}-${row.change_pct}`} className="flex min-w-0 items-start justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm">
+            <span className="min-w-0 break-words font-medium text-slate-600">{formatSignedPercent(row.change_pct)} {suffix}</span>
+            <span className={["min-w-0 break-words text-right font-semibold", Number(row.net_cash ?? 0) >= 0 ? "text-[#0f7963]" : "text-rose-700"].join(" ")}>
               {formatCurrency(Number(row.net_cash ?? 0))}
             </span>
           </div>
@@ -1639,9 +1639,9 @@ function SensitivityList({ title, rows, suffix }: { title: string; rows: Finance
 
 function ForecastPanel({ forecast, recommendations, actionPlan, onHelp }: { forecast: FinanceData["forecast"]; recommendations: InsightMessage[]; actionPlan: FinanceAction[]; onHelp: () => void }) {
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Forecast dan Action Plan</h3>
           <p className="mt-1 text-sm text-slate-500">Proyeksi sederhana dari rata-rata periode terpilih.</p>
         </div>
@@ -1689,11 +1689,11 @@ function ForecastPanel({ forecast, recommendations, actionPlan, onHelp }: { fore
 
 function FinanceKandangPanel({ title, row, emptyText, onHelp }: { title: string; row?: FinanceKandangRow; emptyText: string; onHelp: () => void }) {
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">{title}</h3>
-          <p className="mt-1 text-sm text-slate-500">{row ? row.status : emptyText}</p>
+          <p className="mt-1 break-words text-sm text-slate-500">{row ? row.status : emptyText}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <HelpButton onClick={onHelp} />
@@ -1713,9 +1713,9 @@ function FinanceKandangPanel({ title, row, emptyText, onHelp }: { title: string;
       {row?.root_causes?.length ? (
         <div className="mt-4 space-y-2">
           {row.root_causes.map((cause) => (
-            <div key={`${row.id_kandang}-${cause.title}`} className="rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-4 py-3">
-              <p className="text-sm font-semibold text-slate-900">{cause.title}</p>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{cause.text}</p>
+            <div key={`${row.id_kandang}-${cause.title}`} className="min-w-0 rounded-2xl border border-emerald-950/5 bg-[#f6fbf8] px-4 py-3">
+              <p className="break-words text-sm font-semibold text-slate-900">{cause.title}</p>
+              <p className="mt-1 break-words text-sm leading-6 text-slate-600">{cause.text}</p>
             </div>
           ))}
         </div>
@@ -1726,9 +1726,9 @@ function FinanceKandangPanel({ title, row, emptyText, onHelp }: { title: string;
 
 function FinanceTable({ rows, onHelp }: { rows: FinanceKandangRow[]; onHelp: () => void }) {
   return (
-    <div className="rounded-[26px] border border-white/70 bg-white/85 p-5 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+    <div className="min-w-0 rounded-[22px] border border-white/70 bg-white/85 p-4 shadow-[0_12px_32px_rgba(7,46,40,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-5">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h3 className="text-base font-semibold text-slate-950">Detail Kandang</h3>
           <p className="mt-1 text-sm text-slate-500">Perbandingan laba dan sustainability per kandang.</p>
         </div>
@@ -1740,13 +1740,13 @@ function FinanceTable({ rows, onHelp }: { rows: FinanceKandangRow[]; onHelp: () 
 
       <div className="mt-5 space-y-3 md:hidden">
         {rows.length > 0 ? rows.map((row) => (
-          <div key={String(row.id_kandang)} className="rounded-2xl border border-emerald-950/5 bg-[#fbfdfb] px-4 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-slate-950">{row.nama_kandang}</p>
-                <p className="mt-1 text-sm text-slate-500">{row.risk_level ?? row.status}</p>
+          <div key={String(row.id_kandang)} className="min-w-0 rounded-2xl border border-emerald-950/5 bg-[#fbfdfb] px-4 py-4">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <div className="min-w-0">
+                <p className="break-words font-semibold text-slate-950">{row.nama_kandang}</p>
+                <p className="mt-1 break-words text-sm text-slate-500">{row.risk_level ?? row.status}</p>
               </div>
-              <span className={["text-right text-sm font-semibold", Number(row.net_cash ?? 0) >= 0 ? "text-[#0f7963]" : "text-rose-700"].join(" ")}>
+              <span className={["min-w-0 break-words text-left text-sm font-semibold sm:text-right", Number(row.net_cash ?? 0) >= 0 ? "text-[#0f7963]" : "text-rose-700"].join(" ")}>
                 {formatCurrency(Number(row.net_cash ?? 0))}
               </span>
             </div>
@@ -1794,9 +1794,9 @@ function FinanceTable({ rows, onHelp }: { rows: FinanceKandangRow[]; onHelp: () 
 
 function FinanceRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-right font-semibold text-slate-900">{value}</span>
+    <div className="flex min-w-0 items-start justify-between gap-3">
+      <span className="min-w-0 break-words text-slate-500">{label}</span>
+      <span className="min-w-0 break-words text-right font-semibold text-slate-900">{value}</span>
     </div>
   );
 }

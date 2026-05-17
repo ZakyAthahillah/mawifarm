@@ -186,7 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen text-slate-900">
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full min-w-0">
         <aside
           className={[
             "fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200 bg-white backdrop-blur-xl transition-all duration-300 lg:flex",
@@ -311,7 +311,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div
           className={[
-            "flex min-h-screen flex-1 flex-col transition-all duration-300",
+            "flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300",
             collapsed ? "lg:pl-[92px]" : "lg:pl-[288px]",
           ].join(" ")}
         >
@@ -365,7 +365,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <main className="min-w-0 flex-1 px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
             {children}
           </main>
         </div>
