@@ -104,6 +104,7 @@ type FinanceKandangRow = {
   risk_level?: string;
   risk_score?: number;
   root_causes?: InsightMessage[];
+  is_active_period?: boolean;
   status: string;
 };
 
@@ -1098,8 +1099,11 @@ export function FinancePage() {
   const categories = data?.categories ?? [];
   const kandangRows = data?.kandang ?? [];
   const recommendations = data?.recommendations ?? [];
-  const bestKandang = [...kandangRows].sort((a, b) => Number(b.net_cash ?? 0) - Number(a.net_cash ?? 0))[0];
-  const riskKandang = [...kandangRows].sort((a, b) => Number(a.net_cash ?? 0) - Number(b.net_cash ?? 0))[0];
+  const activeKandangRows = kandangRows.filter((row) => row.is_active_period !== false);
+  const bestKandang = [...activeKandangRows].sort((a, b) => Number(b.net_cash ?? 0) - Number(a.net_cash ?? 0))[0];
+  const riskKandang = [...activeKandangRows]
+    .filter((row) => Number(row.production_kg ?? 0) > 0 || Number(row.cash_in ?? 0) > 0 || Number(row.cash_out ?? 0) > 0)
+    .sort((a, b) => Number(a.net_cash ?? 0) - Number(b.net_cash ?? 0))[0];
   const healthScore = Number(health.score ?? 0);
 
   return (

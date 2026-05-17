@@ -70,7 +70,7 @@ function canAccessPath(role: string | undefined, pathname: string) {
   const deniedByRole: Record<string, string[]> = {
     developer: [],
     owner: ["/dashboard/users", "/dashboard/penjualan", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
-    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/kandang-access", "/dashboard/activity-logs"],
+    admin: ["/dashboard/users", "/dashboard/performa", "/dashboard/fcr", "/dashboard/finance", "/dashboard/kandang-access", "/dashboard/activity-logs"],
     user: ["/dashboard/users", "/dashboard/performa", "/dashboard/operasional", "/dashboard/finance", "/dashboard/distribution/nota", "/dashboard/kandang-access", "/dashboard/activity-logs"],
   };
 
