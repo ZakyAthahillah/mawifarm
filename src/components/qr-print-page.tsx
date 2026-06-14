@@ -100,11 +100,9 @@ function todayInputValue() {
   return date.toISOString().slice(0, 10);
 }
 
-function buildSingleProductionQrText(weight: string, tanggal: string, idKandang: string) {
+function buildSingleProductionQrText(weight: string) {
   return JSON.stringify({
     type: "mawifarm_production_weight",
-    tanggal,
-    id_kandang: idKandang || undefined,
     weight: Number(toNumber(weight).toFixed(2)),
   });
 }
@@ -421,7 +419,7 @@ export function QrPrintPage() {
 
     try {
       for (const weight of printableWeights) {
-        const qrText = buildSingleProductionQrText(weight, selectedDate, selectedKandang);
+        const qrText = buildSingleProductionQrText(weight);
         await writePayload(port, splitFormat ? buildSplitQrPrintPayload(weight, qrText) : buildQrPrintPayload(weight, qrText), resolvedBaudRate);
         await sleep(1500);
       }

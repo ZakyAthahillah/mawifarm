@@ -483,25 +483,22 @@ function parseSaleNoteQr(value: string): { tanggal: string; kandang: string; not
   }
 }
 
-function parseProductionQr(value: string): { tanggal: string; weights: string[] } | null {
+function parseProductionQr(value: string): { weights: string[] } | null {
   try {
     const data = JSON.parse(value) as {
       type?: string;
-      tanggal?: string;
       weight?: string | number;
       weights?: Array<string | number>;
     };
 
     if (data.type === "mawifarm_production_weight" && data.weight !== undefined) {
       return {
-        tanggal: String(data.tanggal ?? ""),
         weights: [String(data.weight).replace(",", ".")],
       };
     }
 
     if (data.type === "mawifarm_production_weights" && Array.isArray(data.weights)) {
       return {
-        tanggal: String(data.tanggal ?? ""),
         weights: data.weights.map((weight) => String(weight).replace(",", ".")),
       };
     }
@@ -788,9 +785,6 @@ export function PenjualanPage() {
     const productionQr = parseProductionQr(value);
 
     if (productionQr) {
-      if (productionQr.tanggal) {
-        setSaleDate(productionQr.tanggal);
-      }
       fillProductionQrWeights(productionQr.weights);
       setMessage("QR produksi masuk ke penjualan.");
       return;

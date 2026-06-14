@@ -1284,12 +1284,6 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
     if (productionBatch) {
       setValues((current) => {
         const next = { ...current };
-        if (productionBatch.id_kandang) {
-          next.id_kandang = productionBatch.id_kandang;
-        }
-        if (productionBatch.tanggal) {
-          next.tanggal = productionBatch.tanggal;
-        }
 
         if (productionBatch.mode === "single") {
           const target = productionWeightFields.find((field) => !next[field.name]);
@@ -1297,6 +1291,13 @@ export function SectionCreateView({ section, mode = "create", id }: { section: S
             next[target.name] = productionBatch.weights[0] ?? "";
           }
           return next;
+        }
+
+        if (productionBatch.id_kandang) {
+          next.id_kandang = productionBatch.id_kandang;
+        }
+        if (productionBatch.tanggal) {
+          next.tanggal = productionBatch.tanggal;
         }
 
         productionWeightFields.forEach((field, index) => {
