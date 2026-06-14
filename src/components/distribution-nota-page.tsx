@@ -114,6 +114,35 @@ function notaQrPayload(nota: DistributionNota) {
   });
 }
 
+function parseProductionQr(value: string): { tanggal: string; weights: string[] } | null {
+  try {
+    const data = JSON.parse(value) as {
+      type?: string;
+      tanggal?: string;
+      weight?: string | number;
+      weights?: Array<string | number>;
+    };
+
+    if (data.type === "mawifarm_production_weight" && data.weight !== undefined) {
+      return {
+        tanggal: String(data.tanggal ?? ""),
+        weights: [String(data.weight).replace(",", ".")],
+      };
+    }
+
+    if (data.type === "mawifarm_production_weights" && Array.isArray(data.weights)) {
+      return {
+        tanggal: String(data.tanggal ?? ""),
+        weights: data.weights.map((weight) => String(weight).replace(",", ".")),
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function buildNotaPrintPayload(nota: DistributionNota) {
   const printableWeights = nota.weights.filter((weight) => weight > 0);
   const lines = printableWeights.map((weight, index) => `${String(index + 1).padStart(2, "0")}. ${formatNumber(weight)} kg`);
@@ -269,6 +298,34 @@ export function DistributionNotaPage() {
   };
 
   const fillNextWeight = (value: string) => {
+    const productionQr = parseProductionQr(value);
+
+    if (productionQr) {
+      if (productionQr.tanggal) {
+        setTanggal(productionQr.tanggal);
+      }
+
+      setWeights((current) => {
+        const next = [...current];
+        let cursor = next.findIndex((item) => item.trim() === "");
+
+        if (cursor === -1) {
+          setMessage("Semua kolom berat sudah terisi.");
+          return current;
+        }
+
+        productionQr.weights.forEach((weight) => {
+          if (cursor === -1) return;
+          next[cursor] = weight;
+          cursor = next.findIndex((item, index) => index > cursor && item.trim() === "");
+        });
+
+        return next;
+      });
+      setMessage("QR produksi masuk ke nota.");
+      return;
+    }
+
     const normalized = value.replace(",", ".").trim();
 
     if (!normalized) return;

@@ -483,6 +483,35 @@ function parseSaleNoteQr(value: string): { tanggal: string; kandang: string; not
   }
 }
 
+function parseProductionQr(value: string): { tanggal: string; weights: string[] } | null {
+  try {
+    const data = JSON.parse(value) as {
+      type?: string;
+      tanggal?: string;
+      weight?: string | number;
+      weights?: Array<string | number>;
+    };
+
+    if (data.type === "mawifarm_production_weight" && data.weight !== undefined) {
+      return {
+        tanggal: String(data.tanggal ?? ""),
+        weights: [String(data.weight).replace(",", ".")],
+      };
+    }
+
+    if (data.type === "mawifarm_production_weights" && Array.isArray(data.weights)) {
+      return {
+        tanggal: String(data.tanggal ?? ""),
+        weights: data.weights.map((weight) => String(weight).replace(",", ".")),
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 const notaApplyStorageKey = "mawifarm:nota-apply";
 
 async function apiGet<T = unknown>(url: string, token?: string | null): Promise<T> {
@@ -727,19 +756,47 @@ export function PenjualanPage() {
     });
   };
 
+  const fillProductionQrWeights = (qrWeights: string[]) => {
+    setWeights((current) => {
+      const next = [...current];
+      let cursor = next.findIndex((item) => item.trim() === "");
+
+      if (cursor === -1) return current;
+
+      qrWeights.forEach((weight) => {
+        if (cursor === -1) return;
+        next[cursor] = weight;
+        cursor = next.findIndex((item, index) => index > cursor && item.trim() === "");
+      });
+
+      return next;
+    });
+  };
+
   const handleScan = (value: string) => {
     const note = parseSaleNoteQr(value);
 
-    if (!note) {
-      fillNextWeight(value.replace(",", "."));
+    if (note) {
+      setSaleDate(note.tanggal);
+      setSelectedKandang(note.kandang);
+      setNotaNumber(note.nota);
+      setWeights(Array.from({ length: 60 }, (_, index) => note.weights[index] ?? ""));
+      setMessage("QR scanned.");
       return;
     }
 
-    setSaleDate(note.tanggal);
-    setSelectedKandang(note.kandang);
-    setNotaNumber(note.nota);
-    setWeights(Array.from({ length: 60 }, (_, index) => note.weights[index] ?? ""));
-    setMessage("QR scanned.");
+    const productionQr = parseProductionQr(value);
+
+    if (productionQr) {
+      if (productionQr.tanggal) {
+        setSaleDate(productionQr.tanggal);
+      }
+      fillProductionQrWeights(productionQr.weights);
+      setMessage("QR produksi masuk ke penjualan.");
+      return;
+    }
+
+    fillNextWeight(value.replace(",", "."));
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
